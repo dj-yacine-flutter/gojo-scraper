@@ -194,8 +194,7 @@ type Link struct {
 }
 
 func (am *AnimeScraper) getAniDBID(links []Link) (int, error) {
-	anidbPattern := regexp.MustCompile(`.*[&?]aid=(\d+).*`)
-
+    anidbPattern := regexp.MustCompile(`[&?]aid=(\d+)`)
 	for _, link := range links {
 		if strings.Contains(strings.ToLower(link.Name), "anidb") {
 			matches := anidbPattern.FindStringSubmatch(link.URL)

@@ -3,46 +3,48 @@ package anime
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	jikan "github.com/darenliang/jikan-go"
+	"github.com/dj-yacine-flutter/gojo-scraper/models"
 	"github.com/dj-yacine-flutter/gojo-scraper/utils"
 )
 
-type TmdbPic struct {
+type AnimePic struct {
 	PortriatBlurHash  string
 	PortriatPoster    string
 	LandscapeBlurHash string
 	LandscapePoster   string
 }
 
-func (server *AnimeScraper) postersFromTMDB(Poster, Backdrop string) (TmdbPic TmdbPic) {
+func (server *AnimeScraper) postersFromTMDB(Poster, Backdrop string) (AnimePic AnimePic) {
 	var err error
 	if Poster != "" {
-		TmdbPic.PortriatBlurHash, err = utils.GetBlurHash(server.DecodeIMG, Poster)
+		AnimePic.PortriatBlurHash, err = utils.GetBlurHash(server.DecodeIMG, Poster)
 		if err != nil {
-			TmdbPic.PortriatBlurHash = ""
-			TmdbPic.PortriatPoster = ""
+			AnimePic.PortriatBlurHash = ""
+			AnimePic.PortriatPoster = ""
 		}
-		TmdbPic.PortriatPoster = server.OriginalIMG + Poster
+		AnimePic.PortriatPoster = server.OriginalIMG + Poster
 	}
 
 	if Backdrop != "" {
-		TmdbPic.LandscapeBlurHash, err = utils.GetBlurHash(server.DecodeIMG, Backdrop)
+		AnimePic.LandscapeBlurHash, err = utils.GetBlurHash(server.DecodeIMG, Backdrop)
 		if err != nil {
-			TmdbPic.LandscapeBlurHash = ""
-			TmdbPic.LandscapePoster = ""
+			AnimePic.LandscapeBlurHash = ""
+			AnimePic.LandscapePoster = ""
 		}
-		TmdbPic.LandscapePoster = server.OriginalIMG + Backdrop
+		AnimePic.LandscapePoster = server.OriginalIMG + Backdrop
 	}
 
 	return
 }
 
-func (server *AnimeScraper) postersFromMAL(Pic, JPG, WEBP string) (TmdbPic TmdbPic) {
+func (server *AnimeScraper) postersFromMAL(Pic, JPG, WEBP string) (AnimePic AnimePic) {
 	var err error
 	img := ""
 	if JPG != "" {
@@ -52,75 +54,35 @@ func (server *AnimeScraper) postersFromMAL(Pic, JPG, WEBP string) (TmdbPic TmdbP
 	} else {
 		img = fmt.Sprint("https://cdn-eu.anidb.net/images/main/" + Pic)
 	}
-	TmdbPic.PortriatBlurHash, err = utils.GetBlurHash(img, "")
+	AnimePic.PortriatBlurHash, err = utils.GetBlurHash(img, "")
 	if err != nil {
-		TmdbPic.PortriatBlurHash = ""
+		AnimePic.PortriatBlurHash = ""
 	}
 
-	TmdbPic.PortriatPoster = img
-	TmdbPic.LandscapeBlurHash, err = utils.GetBlurHash(img, "")
+	AnimePic.PortriatPoster = img
+	AnimePic.LandscapeBlurHash, err = utils.GetBlurHash(img, "")
 	if err != nil {
-		TmdbPic.LandscapeBlurHash = ""
+		AnimePic.LandscapeBlurHash = ""
 	}
-	TmdbPic.LandscapeBlurHash = ""
+	AnimePic.LandscapeBlurHash = ""
 	return
 }
 
-func (server *AnimeScraper) findResourceByAniDB(anidbID int) (AnimeResources, error) {
+func (server *AnimeScraper) findResourceByAniDBandmalID(anidbID, malID int) (AnimeResources, error) {
 	for _, d := range GlobalAnimeResources {
 		if anidbID == d.AnidbID {
-			return d, nil
-		}
-	}
-	return AnimeResources{}, fmt.Errorf("no resource found with this aniDB ID")
-}
-
-func (server *AnimeScraper) findAniDBIDByTitle(malData *jikan.AnimeById) (int, error) {
-	for _, v := range GlobalAniDBTitles.Animes {
-		for _, title := range v.Titles {
-			for _, mt := range append(malData.Data.TitleSynonyms, malData.Data.Title, malData.Data.TitleEnglish) {
-				titleMatches := strings.Contains(strings.ToLower(title.Value), strings.ToLower(mt))
-				if titleMatches {
-					//					fmt.Printf("AniDB title : %s || Mal title : %s\n", title.Value, malData.Data.TitleEnglish)
-					aniDBData, err := server.GetAniDBData(v.Aid)
-					if err != nil {
-						return 0, err
-					}
-					typeM := strings.Contains(strings.ToLower(aniDBData.Type), strings.ToLower(malData.Data.Type))
-					//					fmt.Printf("AniDB type : %s || Mal type : %s\n", aniDBData.Type, malData.Data.Type)
-					aniY, err := utils.ExtractYear(aniDBData.Startdate)
-					if err != nil {
-						return 0, err
-					}
-					//					fmt.Printf("AniDB year : %d || Mal year : %d\n", aniY, malData.Data.Aired.From.Year())
-					yearM := malData.Data.Aired.From.Year() == aniY
-					if typeM && yearM {
-						return v.Aid, nil
-					}
+			if d.Data.MalID != 0 && malID != 0 {
+				if d.Data.MalID == malID {
+					return d, nil
 				}
+			} else {
+				return d, nil
 			}
 		}
 	}
-	return 0, nil
+	return AnimeResources{}, fmt.Errorf("no resource found for this anime")
 }
 
-func (server *AnimeScraper) resolveAniDBID(w http.ResponseWriter, r *http.Request, malData *jikan.AnimeById, links []Link) (int, error) {
-
-	anidbID, err := server.getAniDBID(links)
-	if err != nil {
-		anidbID, err = server.findAniDBIDByTitle(malData)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	if anidbID == 0 {
-		http.Error(w, "there is no AniDB ID for this anime", http.StatusNotFound)
-		return 0, nil
-	}
-
-	return anidbID, nil
-}
 
 func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 	mal := r.URL.Query().Get("mal")
@@ -155,7 +117,7 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	anidbID, err := server.resolveAniDBID(w, r, malData, links)
+	anidbID, err := server.searchAniDBID(malData, links)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Internal Server Error: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -165,6 +127,8 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Internal Server Error: %s", err.Error()), http.StatusInternalServerError)
 	}
+
+	fmt.Printf("AniDB Episodes: %d\n", len(aniDBData.Episodes.Episode))
 
 	var releaseDate int
 	if malData.Data.Year != 0 {
@@ -176,12 +140,20 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var ageRating string
+	if malData.Data.Rating != "" {
+		ageRating, err = utils.CleanRating(malData.Data.Rating)
+		if err != nil {
+			ageRating = ""
+		}
+	}
+
 	var portriatBlurHash string
 	var landscapeBlurHash string
 	var portriatPoster string
 	var landscapePoster string
 
-	animeResources, err := server.findResourceByAniDB(anidbID)
+	animeResources, err := server.findResourceByAniDBandmalID(anidbID, malData.Data.MalId)
 	if err != nil {
 		animePicMAL := server.postersFromMAL(aniDBData.Picture, malData.Data.Images.Jpg.SmallImageUrl, malData.Data.Images.Webp.SmallImageUrl)
 		portriatBlurHash = animePicMAL.PortriatBlurHash
@@ -190,6 +162,7 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 		landscapePoster = animePicMAL.LandscapePoster
 	}
 
+	var originalTitle string
 	var TMDbID int
 	if animeResources.Data.TMDdID != nil {
 		tt, err := animeResources.Data.TMDdID.MarshalJSON()
@@ -210,6 +183,7 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 					portriatBlurHash = ""
 					landscapeBlurHash = ""
 				} else {
+					originalTitle = anime.OriginalName
 					animePicTmdb := server.postersFromTMDB(anime.PosterPath, anime.BackdropPath)
 					portriatBlurHash = animePicTmdb.PortriatBlurHash
 					portriatPoster = animePicTmdb.PortriatPoster
@@ -222,6 +196,7 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 					portriatBlurHash = ""
 					landscapeBlurHash = ""
 				} else {
+					originalTitle = anime.OriginalTitle
 					animePicTmdb := server.postersFromTMDB(anime.PosterPath, anime.BackdropPath)
 					portriatBlurHash = animePicTmdb.PortriatBlurHash
 					portriatPoster = animePicTmdb.PortriatPoster
@@ -248,7 +223,12 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 						if err != nil {
 							continue
 						}
-						if aDate.Equal(qDate) {
+						if aDate.Year() == qDate.Year() {
+							if q.OriginalName != "" {
+								originalTitle = q.OriginalName
+							} else if q.OriginalTitle != "" {
+								originalTitle = q.OriginalTitle
+							}
 							animePicTmdb := server.postersFromTMDB(q.PosterPath, q.BackdropPath)
 							portriatBlurHash = animePicTmdb.PortriatBlurHash
 							portriatPoster = animePicTmdb.PortriatPoster
@@ -260,11 +240,12 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	fmt.Printf("TMDB before 0 : %d\n", TMDbID)
 
 	if TMDbID == 0 && portriatBlurHash == "" && landscapeBlurHash == "" {
 		for _, r := range aniDBData.Resources.Resource {
 			if strings.Contains(r.Type, "44") {
-				fmt.Print(r.Externalentity)
+				fmt.Println("Externalentity in aniDB :", r.Externalentity.Text)
 				id, err := strconv.ParseInt(r.Externalentity.Identifier[0], 0, 0)
 				if err != nil {
 					TMDbID = 0
@@ -276,12 +257,14 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
+		fmt.Printf("TMDB after 0 : %d\n", TMDbID)
 		if TMDbID != 0 {
 			if strings.Contains(strings.ToLower(malData.Data.Type), "tv") && strings.Contains(strings.ToLower(aniDBData.Type), "tv") {
 				anime, err := server.TMDB.GetTVDetails(TMDbID, nil)
 				if err != nil {
 					TMDbID = 0
 				} else {
+					originalTitle = anime.OriginalName
 					animePicTmdb := server.postersFromTMDB(anime.PosterPath, anime.BackdropPath)
 					portriatBlurHash = animePicTmdb.PortriatBlurHash
 					portriatPoster = animePicTmdb.PortriatPoster
@@ -294,6 +277,7 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 					portriatBlurHash = ""
 					landscapeBlurHash = ""
 				} else {
+					originalTitle = anime.OriginalTitle
 					animePicTmdb := server.postersFromTMDB(anime.PosterPath, anime.BackdropPath)
 					portriatBlurHash = animePicTmdb.PortriatBlurHash
 					portriatPoster = animePicTmdb.PortriatPoster
@@ -319,7 +303,12 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 						if err != nil {
 							continue
 						}
-						if aDate.Equal(qDate) {
+						if aDate.Year() == qDate.Year() {
+							if q.OriginalName != "" {
+								originalTitle = q.OriginalName
+							} else if q.OriginalTitle != "" {
+								originalTitle = q.OriginalTitle
+							}
 							animePicTmdb := server.postersFromTMDB(q.PosterPath, q.BackdropPath)
 							portriatBlurHash = animePicTmdb.PortriatBlurHash
 							portriatPoster = animePicTmdb.PortriatPoster
@@ -340,7 +329,7 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 			}
 			if querys != nil {
 				for _, q := range querys.Results {
-					fmt.Println(q.ID)
+					fmt.Println("query id :", q.ID)
 					aDate, err := time.Parse(time.DateOnly, aniDBData.Startdate)
 					if err != nil {
 						continue
@@ -381,6 +370,80 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	fmt.Println("TVDBID", animeResources.Data.TheTVdbID)
+	if animeResources.Data.TheTVdbID != 0 {
+		if strings.Contains(strings.ToLower(malData.Data.Type), "tv") && strings.Contains(strings.ToLower(aniDBData.Type), "tv") {
+			fmt.Println("TV TVDBID", animeResources.Data.TheTVdbID)
+
+			ss, err := server.TVDB.GetSeriesByIDExtanded(animeResources.Data.TheTVdbID)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				log.Fatal(err)
+
+				return
+			}
+
+			fmt.Println(ss.Data.Name)
+			fmt.Println(ss.Data.Year)
+			fmt.Printf("seasons : %d\n", len(ss.Data.Seasons))
+			for _, s := range ss.Data.Seasons {
+				if s.ID != 0 {
+					rr, err := server.TVDB.GetSeasonsByIDExtended(s.ID)
+					if err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						log.Fatal(err)
+
+						return
+					}
+					if strings.Contains(rr.Data.Type.Type, "official") {
+						fmt.Printf("season ID: %d\n", s.ID)
+						fmt.Printf("season Number: %d\n", s.Number)
+						fmt.Printf("season Type: %s\n", rr.Data.Type.Type)
+						fmt.Printf("season Year: %s\n", rr.Data.Year)
+						fmt.Printf("TVDB Episodes: %d\n", len(rr.Data.Episodes))
+						aYear, err := utils.ExtractYear(aniDBData.Startdate)
+						if err != nil {
+							continue
+						}
+
+						rYear, err := utils.ExtractYear(rr.Data.Year)
+						if err != nil {
+							continue
+						}
+						if aYear == rYear {
+							if landscapePoster == "" {
+								if len(ss.Data.Artworks) > 0 {
+									for i := len(ss.Data.Artworks) - 1; i >= 0; i-- {
+										if ss.Data.Artworks[i].Image != "" && strings.Contains(ss.Data.Artworks[i].Image, "backgrounds") {
+											landscapePoster = ss.Data.Artworks[i].Image
+											landscapeBlurHash, err = utils.GetBlurHash(ss.Data.Artworks[i].Image, "")
+											if err != nil {
+												landscapeBlurHash = ""
+											} else {
+												break
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		} else if strings.Contains(strings.ToLower(malData.Data.Type), "movie") && strings.Contains(strings.ToLower(aniDBData.Type), "movie") {
+			fmt.Println("Movie TVDBID", animeResources.Data.TheTVdbID)
+
+			mm, err := server.TVDB.GetMovieByIDExtended(animeResources.Data.TheTVdbID)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				log.Fatal(err)
+				return
+			}
+
+			fmt.Println("TVDB MOVIE: ", mm)
+		}
+	}
+
 	fmt.Println("tmdbID", TMDbID)
 	fmt.Println("releaseDate: ", releaseDate)
 	fmt.Println("animeResources: ", animeResources)
@@ -389,7 +452,119 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("landscapePoster: ", landscapePoster)
 	fmt.Println("landscapeBlurHash: ", landscapeBlurHash)
 
-	response, err := json.Marshal(aniDBData)
+	var animePlanetID string
+	animePlanetByt, err := animeResources.Data.AnimePlanetID.MarshalJSON()
+	if err != nil {
+		animePlanetID = ""
+	} else {
+		animePlanetID = string(animePlanetByt)
+		animePlanetID = strings.ReplaceAll(animePlanetID, "\"", "")
+	}
+
+	fmt.Println("OriginalTitle: ", originalTitle)
+	if originalTitle == "" {
+		originalTitle = malData.Data.TitleJapanese
+	}
+
+	animeData := models.Anime{
+		OriginalTitle:     originalTitle,
+		Aired:             malData.Data.Aired.From.String(),
+		ReleaseYear:       releaseDate,
+		Rating:            ageRating,
+		PortriatPoster:    portriatPoster,
+		PortriatBlurHash:  portriatBlurHash,
+		LandscapePoster:   landscapePoster,
+		LandscapeBlurHash: landscapeBlurHash,
+		AnimeResources: models.AnimeResources{
+			LivechartID:   animeResources.Data.AnisearchID,
+			AnimePlanetID: animePlanetID,
+			AnisearchID:   animeResources.Data.AnisearchID,
+			AnidbID:       animeResources.Data.AnidbID,
+			KitsuID:       animeResources.Data.KitsuID,
+			MalID:         animeResources.Data.MalID,
+			NotifyMoeID:   animeResources.Data.NotifyMoeID,
+			AnilistID:     animeResources.Data.AnilistID,
+			ThetvdbID:     animeResources.Data.TheTVdbID,
+			ImdbID:        animeResources.Data.IMDbID,
+			ThemoviedbID:  TMDbID,
+			Type:          animeResources.Data.Type,
+		},
+	}
+
+	for _, d := range GlobalAniDBTitles.Animes {
+		if anidbID == d.Aid {
+			for _, t := range d.Titles {
+				if strings.Contains(t.Type, "offi") {
+					animeData.Titles.Offical = append(animeData.Titles.Offical, t.Value)
+				} else if strings.Contains(t.Type, "shor") {
+					animeData.Titles.Short = append(animeData.Titles.Short, t.Value)
+				} else {
+					animeData.Titles.Others = append(animeData.Titles.Others, t.Value)
+				}
+			}
+		}
+	}
+
+	/* 	if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
+		translation, err := gtranslate.TranslateWithParams(
+			utils.CleanOverview(malData.Data.Synopsis),
+			gtranslate.TranslationParams{
+				From: "auto",
+				To:   "en",
+			},
+		)
+		if err != nil {
+			http.Error(w, fmt.Errorf("error when translate Overview to default english: %w ", err).Error(), http.StatusInternalServerError)
+			return
+		}
+
+		metaData := models.MetaData{
+			Language: "en",
+			Meta: models.Meta{
+				Title:    malData.Data.TitleEnglish,
+				Overview: translation,
+			},
+		}
+
+		animeData.AnimeMetas = make([]models.MetaData, len(models.Languages))
+		var newTitle string
+		var newOverview string
+		for i, lang := range models.Languages {
+			newTitle, err = gtranslate.TranslateWithParams(
+				metaData.Meta.Title,
+				gtranslate.TranslationParams{
+					From: "en",
+					To:   lang,
+				},
+			)
+			if err != nil {
+				http.Error(w, fmt.Errorf("error when translate Title to %s: %w ", lang, err).Error(), http.StatusInternalServerError)
+				return
+			}
+
+			newOverview, err = gtranslate.TranslateWithParams(
+				metaData.Meta.Overview,
+				gtranslate.TranslationParams{
+					From: "en",
+					To:   lang,
+				},
+			)
+			if err != nil {
+				http.Error(w, fmt.Errorf("error when translate Overview to %s: %w ", lang, err).Error(), http.StatusInternalServerError)
+				return
+			}
+
+			animeData.AnimeMetas[i] = models.MetaData{
+				Language: lang,
+				Meta: models.Meta{
+					Title:    newTitle,
+					Overview: newOverview,
+				},
+			}
+		}
+	} */
+
+	response, err := json.Marshal(animeData)
 	if err != nil {
 		http.Error(w, "Internal Server Error:", http.StatusInternalServerError)
 		return
@@ -398,176 +573,4 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
-	/*
-
-
-		var releaseDate int
-		if anime.ReleaseDate != "" {
-			t, err := time.Parse(time.DateOnly, anime.ReleaseDate)
-			if err != nil {
-				fmt.Println(err)
-			}
-			releaseDate = t.Year()
-		}
-
-		var portriatBlurHash string
-		if anime.PosterPath != "" {
-			portriatBlurHash, err = utils.GetBlurHash(server.DecodeIMG, anime.PosterPath)
-			if err != nil {
-				http.Error(w, "cannot get portriatBlurHash blurhash", http.StatusInternalServerError)
-				return
-			}
-		}
-
-		var landscapeBlurHash string
-		if anime.BackdropPath != "" {
-			landscapeBlurHash, err = utils.GetBlurHash(server.DecodeIMG, anime.BackdropPath)
-			if err != nil {
-				http.Error(w, "cannot get landscapeBlurHash blurhash", http.StatusInternalServerError)
-				return
-			}
-		}
-
-		var duration string
-		if anime.Runtime != 0 {
-			duration = fmt.Sprintf("%dm", anime.Runtime)
-		}
-
-		var rating string
-		md, err := server.TMDB.GetMovieReleaseDates(int(id))
-		if err == nil {
-			if len(md.MovieReleaseDatesResults.Results) > 0 {
-				if len(md.MovieReleaseDatesResults.Results[0].ReleaseDates) > 0 {
-					for _, r := range md.MovieReleaseDatesResults.Results {
-						if strings.Contains(strings.ToLower(r.Iso3166_1), "us") {
-							if len(r.ReleaseDates[0].Certification) >= 1 {
-								rating = r.ReleaseDates[0].Certification
-							}
-							continue
-						}
-					}
-				}
-			}
-		}
-
-		animeData := models.Anime{
-			OriginalTitle:     anime.OriginalTitle,
-			Aired:             anime.ReleaseDate,
-			ReleaseYear:       releaseDate,
-			Rating:            rating,
-			Duration:          duration,
-			PortriatPoster:    server.OriginalIMG + anime.PosterPath,
-			PortriatBlurHash:  portriatBlurHash,
-			LandscapePoster:   server.OriginalIMG + anime.BackdropPath,
-			LandscapeBlurHash: landscapeBlurHash,
-		}
-
-		if anime.Title != "" && anime.Overview != "" {
-			translation, err := gtranslate.TranslateWithParservers(
-				anime.Overview,
-				gtranslate.TranslationParservers{
-					From: "auto",
-					To:   "en",
-				},
-			)
-			if err != nil {
-				http.Error(w, fmt.Errorf("error when translate Overview to default english: %w ", err).Error(), http.StatusInternalServerError)
-				return
-			}
-
-			metaData := models.MetaData{
-				Language: "en",
-				Meta: models.Meta{
-					Title:    anime.Title,
-					Overview: translation,
-				},
-			}
-
-			animeData.AnimeMetas = make([]models.MetaData, len(models.Languages))
-			var newTitle string
-			var newOverview string
-			for i, lang := range models.Languages {
-				newTitle, err = gtranslate.TranslateWithParservers(
-					metaData.Meta.Title,
-					gtranslate.TranslationParservers{
-						From: "en",
-						To:   lang,
-					},
-				)
-				if err != nil {
-					http.Error(w, fmt.Errorf("error when translate Title to %s: %w ", lang, err).Error(), http.StatusInternalServerError)
-					return
-				}
-
-				newOverview, err = gtranslate.TranslateWithParservers(
-					metaData.Meta.Overview,
-					gtranslate.TranslationParservers{
-						From: "en",
-						To:   lang,
-					},
-				)
-				if err != nil {
-					http.Error(w, fmt.Errorf("error when translate Overview to %s: %w ", lang, err).Error(), http.StatusInternalServerError)
-					return
-				}
-
-				animeData.AnimeMetas[i] = models.MetaData{
-					Language: lang,
-					Meta: models.Meta{
-						Title:    newTitle,
-						Overview: newOverview,
-					},
-				}
-			}
-		}
-
-		response, err := json.Marshal(animeData)
-		if err != nil {
-			http.Error(w, "Internal Server Error:", http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(response)
-	*/
 }
-
-/*  translation, err := utils.Translate(server.HTTP, anime.Overview, "auto", "en")
-if err != nil {
-	http.Error(w, fmt.Errorf("error when translate Overview to default english: %w ", err).Error(), http.StatusInternalServerError)
-	return
-}
-
-metaData := models.MetaData{
-	Language: "en",
-	Meta: models.Meta{
-		Title:    anime.Title,
-		Overview: translation.TranslatedText,
-	},
-}
-
-animeData.AnimeMetas = make([]models.MetaData, len(models.Languages))
-		var newTitle *models.LibreTranslate
-   		var newOverview *models.LibreTranslate
-   		for i, lang := range models.Languages {
-   			newTitle, err = utils.Translate(server.HTTP, metaData.Meta.Title, "en", lang)
-   			if err != nil {
-   				http.Error(w, fmt.Errorf("error when translate Title to %s: %w ", lang, err).Error(), http.StatusInternalServerError)
-   				return
-   			}
-
-   			newOverview, err = utils.Translate(server.HTTP, metaData.Meta.Overview, "en", lang)
-   			if err != nil {
-   				http.Error(w, fmt.Errorf("error when translate Overview to %s: %w ", lang, err).Error(), http.StatusInternalServerError)
-   				return
-   			}
-
-   			animeData.AnimeMetas[i] = models.MetaData{
-   				Language: lang,
-   				Meta: models.Meta{
-   					Title:    newTitle.TranslatedText,
-   					Overview: newOverview.TranslatedText,
-   				},
-   			}
-   		} */
