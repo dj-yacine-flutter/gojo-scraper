@@ -84,7 +84,7 @@ type AniDB struct {
 		Resource []struct {
 			Text           string `xml:",chardata" json:"text,omitempty"`
 			Type           string `xml:"type,attr" json:"type,omitempty"`
-			Externalentity struct {
+			Externalentity []struct {
 				Text       string   `xml:",chardata" json:"text,omitempty"`
 				Identifier []string `xml:"identifier"`
 				URL        string   `xml:"url"`

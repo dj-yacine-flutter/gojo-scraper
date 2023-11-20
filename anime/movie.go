@@ -133,7 +133,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	id, err := strconv.ParseInt(mal, 0, 0)
+	id, err := strconv.Atoi(mal)
 	if err != nil {
 		http.Error(w, "provide a valid 'mal'", http.StatusInternalServerError)
 		return
@@ -284,7 +284,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 		if aDate.Year() == qDate.Year() && aDate.Month() == qDate.Month() {
 			if strings.Contains(a.Type, "movie") {
-				newTVDBid, err := strconv.ParseInt(a.TvdbID, 0, 0)
+				newTVDBid, err := strconv.Atoi(a.TvdbID)
 				if err != nil {
 					continue
 				}
@@ -324,7 +324,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				}
 				break
 			} else if strings.Contains(a.Type, "tv") {
-				newTVDBid, err := strconv.ParseInt(a.TvdbID, 0, 0)
+				newTVDBid, err := strconv.Atoi(a.TvdbID)
 				if err != nil {
 					continue
 				}
@@ -403,148 +403,228 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if animeResources.Data.TMDdID != nil {
-		tt, err := animeResources.Data.TMDdID.MarshalJSON()
-		if err != nil {
-			TMDbID = 0
-		} else {
-			ti, err := strconv.ParseInt(string(tt), 0, 0)
-			if err != nil {
-				TMDbID = 0
-			} else {
-				TMDbID = int(ti)
-			}
-		}
-		if TMDbID != 0 {
-			anime, err := server.TMDB.GetMovieDetails(TMDbID, nil)
-			if err != nil {
-				PortriatBlurHash = ""
-				LandscapeBlurHash = ""
-				TMDbID = 0
-			} else {
-				if OriginalTitle == "" {
-					OriginalTitle = anime.OriginalTitle
+	var TMDBIDs []int
+	for _, r := range AniDBData.Resources.Resource {
+		if strings.Contains(r.Type, "44") {
+			if len(r.Externalentity) > 0 {
+				gg, err := json.Marshal(r.Externalentity)
+				if err != nil {
+					continue
 				}
-				server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
-				server.getTMDBRating(TMDbID, &AgeRating)
-				if len(anime.Genres) > 0 {
-					for _, g := range anime.Genres {
-						if g.Name != "" {
-							Genres = append(Genres, g.Name)
+				fmt.Printf("%s \n\n", string(gg))
+				for _, f := range r.Externalentity {
+					for _, v := range f.Identifier {
+						id, err := strconv.Atoi(v)
+						if err != nil {
+							continue
 						}
-					}
-				}
-				if len(anime.ProductionCompanies) > 0 {
-					for _, p := range anime.ProductionCompanies {
-						if p.Name != "" {
-							Studios = append(Studios, p.Name)
-						}
+						TMDBIDs = append(TMDBIDs, id)
 					}
 				}
 			}
 		}
 	}
 
-	if TMDbID == 0 && LandscapeBlurHash == "" && LandscapePoster == "" {
-		for _, r := range AniDBData.Resources.Resource {
-			if strings.Contains(r.Type, "44") {
-				fmt.Println("Externalentity in aniDB :", r.Externalentity.Text)
-				id, err := strconv.ParseInt(r.Externalentity.Identifier[0], 0, 0)
+	fmt.Printf("TMdb id bf res : %v\n\n", TMDBIDs)
+
+	if animeResources.Data.TMDdID != nil {
+		tt, err := animeResources.Data.TMDdID.MarshalJSON()
+		if err != nil {
+			TMDbID = 0
+		} else {
+			for _, d := range strings.Split(string(tt), ",") {
+				ti, err := strconv.Atoi(d)
 				if err != nil {
 					TMDbID = 0
-					break
+				} else {
+					TMDBIDs = append(TMDBIDs, int(ti))
 				}
-				TMDbID = int(id)
-			}
-			if TMDbID != 0 {
-				break
 			}
 		}
-		fmt.Printf("TMDB after 0 : %d\n", TMDbID)
-		if TMDbID != 0 {
-			anime, _ := server.TMDB.GetMovieDetails(TMDbID, nil)
-			if anime != nil {
-				if OriginalTitle == "" {
-					OriginalTitle = anime.OriginalTitle
-				}
-				server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
-				server.getTMDBRating(TMDbID, &AgeRating)
-				if len(anime.Genres) > 0 {
-					for _, g := range anime.Genres {
-						if g.Name != "" {
-							Genres = append(Genres, g.Name)
+	}
+
+	var TMDBRuntime string
+	var TMDBTitle string
+	if len(TMDBIDs) > 0 {
+		fmt.Println("mmmmm 0")
+		for _, l := range TMDBIDs {
+			TMDbID = l
+			anime, err := server.TMDB.GetMovieDetails(TMDbID, nil)
+			fmt.Println("mmmmm 1")
+			gg, _ := json.Marshal(&anime)
+
+			fmt.Printf("%s \n\n", string(gg))
+			if err != nil {
+				fmt.Printf("TMDB.GetMovieDetails Error: %v \n\n", err)
+				PortriatBlurHash = ""
+				LandscapeBlurHash = ""
+				TMDbID = 0
+			} else {
+				fmt.Println("mmmmm 2")
+				var rd bool
+				if anime.ReleaseDate != "" {
+					eDate, err := time.Parse(time.DateOnly, anime.ReleaseDate)
+					if err != nil {
+						PortriatBlurHash = ""
+						LandscapeBlurHash = ""
+						TMDbID = 0
+					}
+					qDate := malData.Data.Aired.From
+					fmt.Printf("anime tmdb date : %s\n", eDate.String())
+					fmt.Printf("anime mal date : %s\n", qDate.String())
+					if eDate.Year() == qDate.Year() && eDate.Month() == qDate.Month() {
+						rd = true
+					}
+
+				} else {
+					fmt.Println("mmmmm 3")
+					newAnime, err := server.TMDB.GetMovieReleaseDates(TMDbID)
+					if err != nil {
+						PortriatBlurHash = ""
+						LandscapeBlurHash = ""
+						TMDbID = 0
+					}
+					if len(newAnime.Results) > 0 {
+						var rs []string
+						for _, e := range newAnime.Results {
+							if len(e.ReleaseDates) > 0 {
+								for _, k := range e.ReleaseDates {
+									rs = append(rs, k.ReleaseDate)
+								}
+							} else {
+								continue
+							}
 						}
+						if len(rs) > 0 {
+							for _, f := range rs {
+								if strings.Contains(f, malData.Data.Aired.From.Format(time.DateOnly)) {
+									rd = true
+									break
+								}
+							}
+						} else {
+							PortriatBlurHash = ""
+							LandscapeBlurHash = ""
+							TMDbID = 0
+						}
+
 					}
 				}
-				if len(anime.ProductionCompanies) > 0 {
-					for _, p := range anime.ProductionCompanies {
-						if p.Name != "" {
-							Studios = append(Studios, p.Name)
+				if rd {
+					TMDBRuntime = fmt.Sprintf("%dm", anime.Runtime)
+					TMDBTitle = utils.CleanTitle(anime.Title)
+					fmt.Println("mmmmm 4")
+					if OriginalTitle == "" {
+						OriginalTitle = anime.OriginalTitle
+					}
+					server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
+					server.getTMDBRating(TMDbID, &AgeRating)
+					if len(anime.Genres) > 0 {
+						for _, g := range anime.Genres {
+							if g.Name != "" {
+								Genres = append(Genres, g.Name)
+							}
 						}
+					}
+					if len(anime.ProductionCompanies) > 0 {
+						for _, p := range anime.ProductionCompanies {
+							if p.Name != "" {
+								Studios = append(Studios, p.Name)
+							}
+						}
+					}
+					break
+				}
+			}
+		}
+	}
+
+	fmt.Printf("TMdb id af res : %v\n\n", TMDBIDs)
+
+	if TMDbID != 0 && PortriatBlurHash == "" && LandscapeBlurHash == "" {
+		anime, _ := server.TMDB.GetMovieDetails(TMDbID, nil)
+		if anime != nil {
+			if OriginalTitle == "" {
+				OriginalTitle = anime.OriginalTitle
+			}
+			server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
+			server.getTMDBRating(TMDbID, &AgeRating)
+			if len(anime.Genres) > 0 {
+				for _, g := range anime.Genres {
+					if g.Name != "" {
+						Genres = append(Genres, g.Name)
 					}
 				}
 			}
-		} else {
-			querys, _ := server.TMDB.GetSearchMulti(malData.Data.TitleEnglish, nil)
-			if querys != nil {
-				for _, q := range querys.Results {
-					fmt.Println("query id :", q.ID)
-					aDate, err := time.Parse(time.DateOnly, AniDBData.Startdate)
+			if len(anime.ProductionCompanies) > 0 {
+				for _, p := range anime.ProductionCompanies {
+					if p.Name != "" {
+						Studios = append(Studios, p.Name)
+					}
+				}
+			}
+		}
+	} else if TMDbID == 0 && PortriatBlurHash == "" && LandscapeBlurHash == "" {
+		querys, _ := server.TMDB.GetSearchMulti(malData.Data.TitleEnglish, nil)
+		if querys != nil {
+			for _, q := range querys.Results {
+				fmt.Println("query id :", q.ID)
+				aDate, err := time.Parse(time.DateOnly, AniDBData.Startdate)
+				if err != nil {
+					continue
+				}
+				var qDate time.Time
+				if q.ReleaseDate != "" {
+					qDate, err = time.Parse(time.DateOnly, q.ReleaseDate)
 					if err != nil {
 						continue
 					}
-					var qDate time.Time
-					if q.ReleaseDate != "" {
-						qDate, err = time.Parse(time.DateOnly, q.ReleaseDate)
-						if err != nil {
-							continue
-						}
-					} else {
-						qDate, err = time.Parse(time.DateOnly, q.FirstAirDate)
-						if err != nil {
-							continue
-						}
+				} else {
+					qDate, err = time.Parse(time.DateOnly, q.FirstAirDate)
+					if err != nil {
+						continue
 					}
-					fmt.Println("query Year: ", qDate.String())
-					fmt.Println("aniDB Year: ", aDate.String())
-					if aDate.Year() == qDate.Year() {
-						if strings.Contains(strings.ToLower(q.MediaType), "movie") {
-							TMDbID = int(q.ID)
-							if OriginalTitle == "" {
-								OriginalTitle = q.OriginalTitle
-							}
-							server.getTMDBPic(q.PosterPath, q.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
-							server.getTMDBRating(TMDbID, &AgeRating)
-							results, _ := server.TMDB.GetGenreMovieList(nil)
-							if results != nil {
-								for _, f := range results.Genres {
-									if len(q.GenreIDs) > 0 {
-										for _, h := range q.GenreIDs {
-											if int64(f.ID) == h {
-												Genres = append(Genres, f.Name)
-											}
+				}
+				fmt.Println("query Year: ", qDate.String())
+				fmt.Println("aniDB Year: ", aDate.String())
+				if aDate.Year() == qDate.Year() {
+					if strings.Contains(strings.ToLower(q.MediaType), "movie") {
+						TMDbID = int(q.ID)
+						if OriginalTitle == "" {
+							OriginalTitle = q.OriginalTitle
+						}
+						server.getTMDBPic(q.PosterPath, q.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
+						server.getTMDBRating(TMDbID, &AgeRating)
+						results, _ := server.TMDB.GetGenreMovieList(nil)
+						if results != nil {
+							for _, f := range results.Genres {
+								if len(q.GenreIDs) > 0 {
+									for _, h := range q.GenreIDs {
+										if int64(f.ID) == h {
+											Genres = append(Genres, f.Name)
 										}
 									}
 								}
 							}
+						}
 
-							anime, _ := server.TMDB.GetMovieDetails(int(q.ID), nil)
-							if len(anime.ProductionCompanies) > 0 {
-								for _, p := range anime.ProductionCompanies {
-									if p.Name != "" {
-										Studios = append(Studios, p.Name)
-									}
+						anime, _ := server.TMDB.GetMovieDetails(int(q.ID), nil)
+						if len(anime.ProductionCompanies) > 0 {
+							for _, p := range anime.ProductionCompanies {
+								if p.Name != "" {
+									Studios = append(Studios, p.Name)
 								}
 							}
-							break
 						}
+						break
 					}
 				}
 			}
-			if TMDbID == 0 && LandscapePoster == "" || PortriatPoster == "" || PortriatBlurHash == "" || LandscapeBlurHash == "" {
-				server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.LargeImageUrl, malData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
-			}
 		}
+	}
+
+	if TMDbID == 0 && (LandscapePoster == "" || PortriatPoster == "" || PortriatBlurHash == "" || LandscapeBlurHash == "") {
+		server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.LargeImageUrl, malData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
 	}
 
 	if len(malData.Data.Genres) > 0 {
@@ -637,23 +717,60 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	}
 
 	if Runtime == "" {
+		var titles []string
+		titles = append(titles, TMDBTitle, malData.Data.Title, malData.Data.TitleEnglish, malData.Data.TitleJapanese)
 		if len(AniDBData.Episodes.Episode) > 0 {
 			var h int
-			for _, d := range AniDBData.Episodes.Episode {
-				if d.Length != "" {
-					b, err := strconv.ParseInt(d.Length, 0, 0)
-					if err != nil {
-						continue
-					}
-					if h < int(b) && b != 0 {
-						h = int(b)
+			for _, e := range AniDBData.Episodes.Episode {
+				if e.Epno.Text != "" {
+					if strings.Contains(e.Epno.Type, "1") {
+						if len(e.Title) > 0 {
+							for _, u := range e.Title {
+								for _, t := range titles {
+									if strings.Contains(utils.CleanTitle(t), utils.CleanTitle(u.Text)) {
+										fmt.Printf("ttttttttttt: %s\n", utils.CleanTitle(t))
+										fmt.Printf("uuuuuuuuuuu: %s\n", utils.CleanTitle(u.Text))
+										if e.Length != "" {
+											b, err := strconv.Atoi(e.Length)
+											if err != nil {
+												continue
+											}
+											if h < int(b) && b != 0 {
+												h = int(b)
+											}
+											break
+										}
+									} else {
+										airdate, err := time.Parse(time.DateOnly, e.Airdate)
+										if err == nil {
+											if malData.Data.Aired.From.Year() == airdate.Year() && malData.Data.Aired.From.Month() == airdate.Month() {
+												if e.Length != "" {
+													b, err := strconv.Atoi(e.Length)
+													if err != nil {
+														continue
+													}
+													if h < int(b) && b != 0 {
+														h = int(b)
+													}
+													break
+												}
+											}
+										}
+									}
+								}
+								if h != 0 {
+									break
+								}
+							}
+						}
+
 					}
 				}
 			}
 			if h != 0 {
 				Runtime = utils.CleanRuntime(fmt.Sprintf("%dm", h))
 			} else {
-				Runtime = utils.CleanRuntime(malData.Data.Duration)
+				Runtime = utils.CleanRuntime(TMDBRuntime)
 			}
 		} else {
 			Runtime = utils.CleanRuntime(malData.Data.Duration)
@@ -675,17 +792,17 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Tags:              utils.CleanStringArray(Tags),
 		AnimeResources: models.AnimeResources{
 			LivechartID:   animeResources.Data.AnisearchID,
-			AnimePlanetID: AnimePlanetID,
+			AnimePlanetID: utils.CleanResText(AnimePlanetID),
 			AnisearchID:   animeResources.Data.AnisearchID,
 			AnidbID:       AniDBID,
 			KitsuID:       animeResources.Data.KitsuID,
 			MalID:         MalID,
-			NotifyMoeID:   animeResources.Data.NotifyMoeID,
+			NotifyMoeID:   utils.CleanResText(animeResources.Data.NotifyMoeID),
 			AnilistID:     animeResources.Data.AnilistID,
 			ThetvdbID:     TVDbID,
-			ImdbID:        IMDbID,
+			ImdbID:        utils.CleanResText(IMDbID),
 			ThemoviedbID:  TMDbID,
-			Type:          animeResources.Data.Type,
+			Type:          utils.CleanResText(animeResources.Data.Type),
 		},
 	}
 
@@ -781,8 +898,8 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 			animeData.AnimeMetas[i] = models.MetaData{
 				Language: lang,
 				Meta: models.Meta{
-					Title:    newTitle,
-					Overview: newOverview,
+					Title:    utils.CleanUnicode(newTitle),
+					Overview: utils.CleanUnicode(newOverview),
 				},
 			}
 		}

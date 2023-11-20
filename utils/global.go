@@ -31,9 +31,101 @@ func CleanStringArray(inputStrings []string) []string {
 	return outputStrings
 }
 
+func CleanTitle(input string) string {
+	input = CleanUnicode(input)
+	input = strings.ToLower(input)
+
+	chars := []string{
+		"\\",
+		"\"",
+		"\t",
+		"\n",
+		"\f",
+		"\r",
+		"\a",
+		"\v",
+		"\b",
+		">",
+		"<",
+		"~",
+		".",
+		",",
+		"`",
+		"'",
+		":",
+		";",
+		"|",
+		"}",
+		"{",
+		"_",
+		"*",
+		"]",
+		"[",
+		"(",
+		")",
+		"-",
+		"+",
+		"/",
+		"「",
+		"」",
+		"!",
+		"?",
+	}
+	for _, c := range chars {
+		input = strings.ReplaceAll(input, c, " ")
+	}
+	input = strings.Join(strings.Fields(input), " ")
+	input = strings.ReplaceAll(input, " ", "-")
+	input = strings.ReplaceAll(input, "--", "-")
+
+	pattern := regexp.MustCompile(`\n`)
+	cleanedText := pattern.ReplaceAllString(input, "")
+
+	return cleanedText
+}
+
+func CleanUnicode(input string) string {
+	unicodes := []string{
+		"\u200b",
+		"\u200d",
+		"\u200e",
+		"\u200f",
+		"\u00ad",
+		"\u200c",
+		"\u180e",
+		"\u202a",
+		"\u202b",
+		"\u202d",
+		"\u202e",
+	}
+
+	for _, u := range unicodes {
+		input = strings.ReplaceAll(input, u, " ")
+	}
+	input = strings.Join(strings.Fields(input), " ")
+
+	return input
+}
+
+func CleanResText(input string) string {
+	text := input
+
+	input = strings.ToLower(input)
+	input = strings.ReplaceAll(input, "  ", " ")
+	input = strings.ReplaceAll(input, " ", "")
+	if len(input) <= 4 {
+		input = strings.ReplaceAll(input, "null", "")
+		input = strings.ReplaceAll(input, "nil", "")
+		text = input
+	}
+
+	return text
+}
+
 func CleanOverview(input string) string {
 	pattern := regexp.MustCompile(`\n\n\[\]|\[[^\]]*]`)
 
+	input = CleanUnicode(input)
 	cleanedText := pattern.ReplaceAllString(input, "")
 
 	return cleanedText
@@ -41,29 +133,25 @@ func CleanOverview(input string) string {
 
 func CleanTag(input string) string {
 	input = strings.ToLower(input)
-	if strings.Contains(input, "maintenance") {
-		return ""
+
+	tags := []string{
+		"maintenance",
+		"to episode",
+		"moved to",
+		"tag",
+		"element",
+		"setting",
+		"themes",
+		"deleted",
+		"-- ",
 	}
-	if strings.Contains(input, "to episode") {
-		return ""
-	}
-	if strings.Contains(input, "moved to") {
-		return ""
-	}
-	if strings.Contains(input, "tag") {
-		return ""
-	}
-	if strings.Contains(input, "element") {
-		return ""
-	}
-	if strings.Contains(input, "setting") {
-		return ""
-	}
-	if strings.Contains(input, "themes") {
-		return ""
+	for _, t := range tags {
+		if strings.Contains(input, t) {
+			return ""
+		}
 	}
 
-	return input
+	return CleanUnicode(input)
 }
 
 func CleanRuntime(input string) string {

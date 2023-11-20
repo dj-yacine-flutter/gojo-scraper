@@ -83,7 +83,6 @@ func (server *AnimeScraper) findResourceByAniDBandmalID(anidbID, malID int) (Ani
 	return AnimeResources{}, fmt.Errorf("no resource found for this anime")
 }
 
-
 func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 	mal := r.URL.Query().Get("mal")
 	if mal == "" {
@@ -245,8 +244,8 @@ func (server *AnimeScraper) GetAnime(w http.ResponseWriter, r *http.Request) {
 	if TMDbID == 0 && portriatBlurHash == "" && landscapeBlurHash == "" {
 		for _, r := range aniDBData.Resources.Resource {
 			if strings.Contains(r.Type, "44") {
-				fmt.Println("Externalentity in aniDB :", r.Externalentity.Text)
-				id, err := strconv.ParseInt(r.Externalentity.Identifier[0], 0, 0)
+				fmt.Println("Externalentity in aniDB :", r.Externalentity[0].Text)
+				id, err := strconv.ParseInt(r.Externalentity[0].Identifier[0], 0, 0)
 				if err != nil {
 					TMDbID = 0
 					break
