@@ -22,7 +22,7 @@ type MetaData struct {
 
 type AnimeResources struct {
 	LivechartID   int    `json:"livechartID"`
-	AnimePlanetID string `json:"anime-planetID"`
+	AnimePlanetID string `json:"animePlanetID"`
 	AnisearchID   int    `json:"anisearchID"`
 	AnidbID       int    `json:"anidbID"`
 	KitsuID       int    `json:"kitsuID"`
@@ -42,21 +42,22 @@ type Titles struct {
 }
 
 type Anime struct {
-	OriginalTitle     string         `json:"originalTitle"`
-	Aired             string         `json:"aired"`
-	ReleaseYear       int            `json:"releaseYear"`
-	Rating            string         `json:"rating"`
-	Runtime           string         `json:"runtime"`
-	PortriatPoster    string         `json:"portriatPoster"`
-	PortriatBlurHash  string         `json:"portriatBlurHash"`
-	LandscapePoster   string         `json:"landscapePoster"`
-	LandscapeBlurHash string         `json:"landscapeBlurHash"`
-	AnimeResources    AnimeResources `json:"animeResources"`
-	Titles            Titles         `json:"titles"`
-	Genres            []string       `json:"genres"`
-	Studios           []string       `json:"studios"`
-	Tags              []string       `json:"tags"`
-	AnimeMetas        []MetaData     `json:"animeMetas"`
+	OriginalTitle       string         `json:"originalTitle"`
+	Aired               string         `json:"aired"`
+	ReleaseYear         int            `json:"releaseYear"`
+	Rating              string         `json:"rating"`
+	Runtime             string         `json:"runtime"`
+	PortriatPoster      string         `json:"portriatPoster"`
+	PortriatBlurHash    string         `json:"portriatBlurHash"`
+	LandscapePoster     string         `json:"landscapePoster"`
+	LandscapeBlurHash   string         `json:"landscapeBlurHash"`
+	AnimeResources      AnimeResources `json:"animeResources"`
+	Titles              Titles         `json:"titles"`
+	Genres              []string       `json:"genres"`
+	Studios             []string       `json:"studios"`
+	ProductionCompanies []string       `json:"productionCompanies"`
+	Tags                []string       `json:"tags"`
+	AnimeMetas          []MetaData     `json:"animeMetas"`
 }
 
 type Movie struct {

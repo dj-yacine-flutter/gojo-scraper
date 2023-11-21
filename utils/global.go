@@ -7,6 +7,20 @@ import (
 	"strings"
 )
 
+func CleanDuplicates(input []string) []string {
+	unique := make(map[string]struct{})
+	result := make([]string, 0)
+
+	for _, item := range input {
+		if _, found := unique[item]; !found {
+			unique[item] = struct{}{}
+			result = append(result, item)
+		}
+	}
+
+	return result
+}
+
 func CleanStringArray(inputStrings []string) []string {
 	seenStrings := make(map[string]bool)
 	outputStrings := []string{}
@@ -70,6 +84,12 @@ func CleanTitle(input string) string {
 		"」",
 		"!",
 		"?",
+		"@",
+		"#",
+		"$",
+		"%",
+		"^",
+		"&",
 	}
 	for _, c := range chars {
 		input = strings.ReplaceAll(input, c, " ")
@@ -156,14 +176,16 @@ func CleanTag(input string) string {
 
 func CleanRuntime(input string) string {
 	input = strings.ToLower(input)
-	input = strings.ReplaceAll(input, "", "")
 	input = strings.ReplaceAll(input, "hours", "h ")
 	input = strings.ReplaceAll(input, "hour", "h ")
 	input = strings.ReplaceAll(input, "hr", "h ")
 	input = strings.ReplaceAll(input, "minutes", "m ")
 	input = strings.ReplaceAll(input, "minute", "m ")
+	input = strings.ReplaceAll(input, "min", "m ")
 	input = strings.ReplaceAll(input, "seconds", "s ")
 	input = strings.ReplaceAll(input, "second", "s ")
+	input = strings.ReplaceAll(input, "sec", "s ")
+	input = strings.Join(strings.Fields(input), " ")
 	return input
 }
 
