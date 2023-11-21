@@ -83,7 +83,7 @@ func fetchAnimeTitles() {
 			continue
 		}
 
-		gzipFile, err := os.Create("data/anidb-titles.xml.gz")
+		gzipFile, err := os.Create("anidb-titles.xml.gz")
 		if err != nil {
 			fmt.Println("Error creating gzip file:", err)
 			continue
@@ -97,7 +97,7 @@ func fetchAnimeTitles() {
 		}
 
 		// Read the saved gzip file
-		gz, err := os.Open("data/anidb-titles.xml.gz")
+		gz, err := os.Open("anidb-titles.xml.gz")
 		if err != nil {
 			fmt.Println("Error opening gzip file:", err)
 			continue
@@ -127,7 +127,7 @@ func fetchAnimeTitles() {
 			continue
 		}
 
-		file, err := os.Create("data/anidb-titles.json")
+		file, err := os.Create("anidb-titles.json")
 		if err != nil {
 			fmt.Println("Error creating JSON file:", err)
 			return
@@ -204,7 +204,7 @@ func fetchAnimeResources() {
 			}
 		}
 
-		jsonFile, err := os.Create("data/anime-resources.json")
+		jsonFile, err := os.Create("anime-resources.json")
 		if err != nil {
 			fmt.Println("Error creating anime-resources file:", err)
 			continue
