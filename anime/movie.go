@@ -857,6 +857,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 
 	LivechartID := server.Livechart(animeResources.Data.LivechartID, OriginalTitle, Aired)
 	AnysearchID := server.Anysearch(animeResources.Data.AnisearchID, malData.Data.TitleEnglish, OriginalTitle, Aired)
+	KitsuID := server.Kitsu(animeResources.Data.KitsuID, OriginalTitle, Aired)
 
 	animeData := models.Anime{
 		OriginalTitle:       OriginalTitle,
@@ -878,7 +879,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 			AnimePlanetID: utils.CleanResText(AnimePlanetID),
 			AnisearchID:   AnysearchID,
 			AnidbID:       AniDBID,
-			KitsuID:       animeResources.Data.KitsuID,
+			KitsuID:       KitsuID,
 			MalID:         MalID,
 			NotifyMoeID:   utils.CleanResText(animeResources.Data.NotifyMoeID),
 			AnilistID:     animeResources.Data.AnilistID,

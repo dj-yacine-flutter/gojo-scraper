@@ -1,8 +1,10 @@
 package anime
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -136,12 +138,28 @@ func (server *AnimeScraper) Anysearch(id int, title, originalTitle string, date 
 				} else {
 					release := block.Find(".released").First()
 					if release != nil {
-						layout := "02.01.2006"
-						parsedTime, err := time.Parse(layout, release.Text())
-						if err == nil {
-							if parsedTime.Year() == date.Year() && parsedTime.Month() == date.Month() {
-								found = true
-								return
+						if !strings.Contains(release.Text(), "‑") {
+							layout := "02.01.2006"
+							parsedTime, err := time.Parse(layout, release.Text())
+							if err == nil {
+								if parsedTime.Year() == date.Year() && parsedTime.Month() == date.Month() {
+									found = true
+									return
+								}
+							}
+						} else {
+							nr := strings.ReplaceAll(strings.ToLower(release.Text()), "release date: ", "")
+							dateRange := strings.Split(nr, "‑")
+							layout := "02.01.2006"
+							for _, d := range dateRange {
+								ntime := strings.ReplaceAll(d, " ", "")
+								ptime, err := time.Parse(layout, ntime)
+								if err == nil {
+									if ptime.Year() == date.Year() && ptime.Month() == date.Month() {
+										found = true
+										return
+									}
+								}
 							}
 						}
 					}
@@ -152,6 +170,156 @@ func (server *AnimeScraper) Anysearch(id int, title, originalTitle string, date 
 			}
 		}
 		id = 0
+	}
+	return 0
+}
+
+type KitsuData struct {
+	Data struct {
+		ID    string `json:"id,omitempty"`
+		Type  string `json:"type,omitempty"`
+		Links struct {
+			Self string `json:"self,omitempty"`
+		} `json:"links,omitempty"`
+		Attributes struct {
+			Slug   string `json:"slug,omitempty"`
+			Titles struct {
+				En   string `json:"en,omitempty"`
+				EnJp string `json:"en_jp,omitempty"`
+				JaJp string `json:"ja_jp,omitempty"`
+			} `json:"titles,omitempty"`
+			CanonicalTitle    string   `json:"canonicalTitle,omitempty"`
+			AbbreviatedTitles []string `json:"abbreviatedTitles,omitempty"`
+			StartDate         string   `json:"startDate,omitempty"`
+			AgeRating         string   `json:"ageRating,omitempty"`
+			Status            string   `json:"status,omitempty"`
+			EpisodeCount      int      `json:"episodeCount,omitempty"`
+			EpisodeLength     int      `json:"episodeLength,omitempty"`
+			ShowType          string   `json:"showType,omitempty"`
+		} `json:"attributes,omitempty"`
+	} `json:"data,omitempty"`
+}
+
+type KitsuSearch struct {
+	Data []struct {
+		ID    string `json:"id,omitempty"`
+		Type  string `json:"type,omitempty"`
+		Links struct {
+			Self string `json:"self,omitempty"`
+		} `json:"links,omitempty"`
+		Attributes struct {
+			Slug   string `json:"slug,omitempty"`
+			Titles struct {
+				En   string `json:"en,omitempty"`
+				EnJp string `json:"en_jp,omitempty"`
+				JaJp string `json:"ja_jp,omitempty"`
+			} `json:"titles,omitempty"`
+			CanonicalTitle    string   `json:"canonicalTitle,omitempty"`
+			AbbreviatedTitles []string `json:"abbreviatedTitles,omitempty"`
+			StartDate         string   `json:"startDate,omitempty"`
+			AgeRating         string   `json:"ageRating,omitempty"`
+			Status            string   `json:"status,omitempty"`
+			EpisodeCount      int      `json:"episodeCount,omitempty"`
+			EpisodeLength     int      `json:"episodeLength,omitempty"`
+			ShowType          string   `json:"showType,omitempty"`
+		} `json:"attributes,omitempty"`
+	} `json:"data,omitempty"`
+}
+
+func (server *AnimeScraper) Kitsu(id int, title string, date time.Time) int {
+	if id != 0 {
+		url := fmt.Sprintf("https://kitsu.io/api/edge/anime/%d", id)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return 0
+		}
+		req.Header.Set("authority", "kitsu.io")
+		req.Header.Set("origin", "https://kitsu.io")
+		req.Header.Set("referer", "https://kitsu.io")
+		req.Header.Set("user-agent", UserAgent)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return 0
+		}
+		defer resp.Body.Close()
+		anime := KitsuData{}
+		err = json.NewDecoder(resp.Body).Decode(&anime)
+		if err != nil {
+			return 0
+		}
+
+		ptime, err := time.Parse(time.DateOnly, anime.Data.Attributes.StartDate)
+		if err == nil {
+			if ptime.Year() == date.Year() && ptime.Month() == date.Month() {
+				ID, err := strconv.Atoi(anime.Data.ID)
+				if err == nil {
+					return ID
+				}
+			}
+		}
+		var titles []string
+		titles = append(titles, anime.Data.Attributes.Titles.En)
+		titles = append(titles, anime.Data.Attributes.Titles.EnJp)
+		titles = append(titles, anime.Data.Attributes.Titles.JaJp)
+		titles = append(titles, anime.Data.Attributes.CanonicalTitle)
+		titles = append(titles, anime.Data.Attributes.AbbreviatedTitles...)
+
+		for _, t := range titles {
+			if strings.Contains(utils.CleanTitle(t), utils.CleanTitle(title)) {
+				return id
+			}
+		}
+	} else {
+		query := fmt.Sprintf("https://kitsu.io/api/edge/anime?filter[text]=%s", title)
+		req, err := http.NewRequest("GET", query, nil)
+		if err != nil {
+			return 0
+		}
+		req.Header.Set("authority", "kitsu.io")
+		req.Header.Set("origin", "https://kitsu.io")
+		req.Header.Set("referer", "https://kitsu.io")
+		req.Header.Set("user-agent", UserAgent)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return 0
+		}
+		defer resp.Body.Close()
+
+		animes := KitsuSearch{}
+		err = json.NewDecoder(resp.Body).Decode(&animes)
+		if err != nil {
+			return 0
+		}
+
+		for _, d := range animes.Data {
+			ptime, err := time.Parse(time.DateOnly, d.Attributes.StartDate)
+			if err == nil {
+				if ptime.Year() == date.Year() && ptime.Month() == date.Month() {
+					ID, err := strconv.Atoi(d.ID)
+					if err == nil {
+						return ID
+					}
+				}
+			}
+
+			var titles []string
+			titles = append(titles, d.Attributes.Titles.En)
+			titles = append(titles, d.Attributes.Titles.EnJp)
+			titles = append(titles, d.Attributes.Titles.JaJp)
+			titles = append(titles, d.Attributes.CanonicalTitle)
+			titles = append(titles, d.Attributes.AbbreviatedTitles...)
+
+			for _, t := range titles {
+				if strings.Contains(utils.CleanTitle(t), utils.CleanTitle(title)) {
+					ID, err := strconv.Atoi(d.ID)
+					if err == nil {
+						return ID
+					}
+				}
+			}
+		}
 	}
 	return 0
 }
