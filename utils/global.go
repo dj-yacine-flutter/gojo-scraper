@@ -31,7 +31,7 @@ func ExtractID(url string) (int) {
 
 func CleanQuery(input string) string {
 	input = CleanUnicode(input)
-
+	input = strings.ReplaceAll(input, " ", "+")
 	return input
 }
 
