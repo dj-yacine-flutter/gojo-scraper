@@ -7,6 +7,34 @@ import (
 	"strings"
 )
 
+func ExtractID(url string) (int) {
+	// Split the URL by "/"
+	parts := strings.Split(url, "/")
+
+	// Regular expression to match fragments containing numbers
+	numberRegex := regexp.MustCompile(`\d+`)
+
+	// Find the first fragment containing numbers
+	for _, part := range parts {
+		if numberRegex.MatchString(part) {
+			id, err := strconv.Atoi(part)
+			if err != nil {
+				return 0
+			}
+			return id
+		}
+	}
+
+	// Return an error if no fragment with numbers is found
+	return 0
+}
+
+func CleanQuery(input string) string {
+	input = CleanUnicode(input)
+
+	return input
+}
+
 func CleanDuplicates(input []string) []string {
 	unique := make(map[string]struct{})
 	result := make([]string, 0)

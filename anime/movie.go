@@ -151,12 +151,13 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		TMDbID            int
 		MalID             int
 		IMDbID            string
-		Aired             string
+		Aired             time.Time
 		Runtime           string
 		Genres            []string
 		Studios           []string
 		Tags              []string
 		PsCs              []string
+		Titles            models.Titles
 	)
 
 	ReleaseYear = 0
@@ -171,12 +172,13 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	TMDbID = 0
 	MalID = 0
 	IMDbID = ""
-	Aired = ""
+	Aired = time.Time{}
 	Runtime = ""
 	Genres = nil
 	Studios = nil
 	Tags = nil
 	PsCs = nil
+	Titles = models.Titles{}
 
 	malData, err := jikan.GetAnimeById(int(id))
 	if err != nil {
@@ -710,33 +712,31 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		AnimePlanetID = strings.ReplaceAll(AnimePlanetID, "\"", "")
 	}
 
-	if Aired == "" {
-		if AniDBData.Startdate != "" {
-			stratDate, err := time.Parse(time.DateOnly, AniDBData.Startdate)
-			if err == nil {
-				if AniDBData.Enddate != "" {
-					if malData.Data.Aired.From.Year() == stratDate.Year() && malData.Data.Aired.From.Month() == stratDate.Month() {
-						Aired = stratDate.Format(time.DateOnly)
-					}
-					endDate, err := time.Parse(time.DateOnly, AniDBData.Enddate)
-					if err == nil {
-						if malData.Data.Aired.From.Year() == endDate.Year() && malData.Data.Aired.From.Month() == endDate.Month() {
-							Aired = endDate.Format(time.DateOnly)
-						}
-					}
-				} else {
-					Aired = malData.Data.Aired.From.Format(time.DateOnly)
+	if AniDBData.Startdate != "" {
+		stratDate, err := time.Parse(time.DateOnly, AniDBData.Startdate)
+		if err == nil {
+			if AniDBData.Enddate != "" {
+				if malData.Data.Aired.From.Year() == stratDate.Year() && malData.Data.Aired.From.Month() == stratDate.Month() {
+					Aired = stratDate
 				}
+				endDate, err := time.Parse(time.DateOnly, AniDBData.Enddate)
+				if err == nil {
+					if malData.Data.Aired.From.Year() == endDate.Year() && malData.Data.Aired.From.Month() == endDate.Month() {
+						Aired = endDate
+					}
+				}
+			} else {
+				Aired = malData.Data.Aired.From
 			}
-		} else {
-			Aired = malData.Data.Aired.From.Format(time.DateOnly)
 		}
+	} else {
+		Aired = malData.Data.Aired.From
 	}
 
 	if malData.Data.Year != 0 {
 		ReleaseYear = malData.Data.Year
 	} else {
-		ReleaseYear, err = utils.ExtractYear(Aired)
+		ReleaseYear, err = utils.ExtractYear(Aired.Format(time.DateOnly))
 		if err != nil {
 			ReleaseYear = 0
 		}
@@ -829,9 +829,37 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
+	if len(malData.Data.TitleSynonyms) > 0 {
+		Titles.Others = append(Titles.Others, malData.Data.TitleSynonyms...)
+	}
+
+	if malData.Data.TitleJapanese != "" {
+		Titles.Offical = append(Titles.Offical, malData.Data.TitleJapanese)
+	} else if malData.Data.TitleEnglish != "" {
+		Titles.Offical = append(Titles.Offical, malData.Data.TitleEnglish)
+	} else if malData.Data.Title != "" {
+		Titles.Offical = append(Titles.Offical, malData.Data.Title)
+	}
+
+	for _, d := range GlobalAniDBTitles.Animes {
+		if AniDBID == d.Aid {
+			for _, t := range d.Titles {
+				if strings.Contains(t.Type, "main") {
+					Titles.Offical = append(Titles.Offical, t.Value)
+				} else if strings.Contains(t.Type, "sho") {
+					Titles.Short = append(Titles.Short, t.Value)
+				} else {
+					Titles.Others = append(Titles.Others, t.Value)
+				}
+			}
+		}
+	}
+
+	LivechartID := server.Livechart(animeResources.Data.LivechartID, OriginalTitle, Aired)
+
 	animeData := models.Anime{
 		OriginalTitle:       OriginalTitle,
-		Aired:               Aired,
+		Aired:               Aired.Format(time.DateOnly),
 		Runtime:             Runtime,
 		ReleaseYear:         ReleaseYear,
 		Rating:              AgeRating,
@@ -843,8 +871,9 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Studios:             utils.CleanDuplicates(utils.CleanStringArray(Studios)),
 		Tags:                utils.CleanStringArray(Tags),
 		ProductionCompanies: PsCs,
+		Titles:              Titles,
 		AnimeResources: models.AnimeResources{
-			LivechartID:   animeResources.Data.AnisearchID,
+			LivechartID:   LivechartID,
 			AnimePlanetID: utils.CleanResText(AnimePlanetID),
 			AnisearchID:   animeResources.Data.AnisearchID,
 			AnidbID:       AniDBID,
@@ -857,32 +886,6 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 			ThemoviedbID:  TMDbID,
 			Type:          utils.CleanResText(animeResources.Data.Type),
 		},
-	}
-
-	if len(malData.Data.TitleSynonyms) > 0 {
-		animeData.Titles.Others = append(animeData.Titles.Others, malData.Data.TitleSynonyms...)
-	}
-
-	if malData.Data.TitleJapanese != "" {
-		animeData.Titles.Offical = append(animeData.Titles.Offical, malData.Data.TitleJapanese)
-	} else if malData.Data.TitleEnglish != "" {
-		animeData.Titles.Offical = append(animeData.Titles.Offical, malData.Data.TitleEnglish)
-	} else if malData.Data.Title != "" {
-		animeData.Titles.Offical = append(animeData.Titles.Offical, malData.Data.Title)
-	}
-
-	for _, d := range GlobalAniDBTitles.Animes {
-		if AniDBID == d.Aid {
-			for _, t := range d.Titles {
-				if strings.Contains(t.Type, "main") {
-					animeData.Titles.Offical = append(animeData.Titles.Offical, t.Value)
-				} else if strings.Contains(t.Type, "sho") {
-					animeData.Titles.Short = append(animeData.Titles.Short, t.Value)
-				} else {
-					animeData.Titles.Others = append(animeData.Titles.Others, t.Value)
-				}
-			}
-		}
 	}
 
 	fmt.Println("Licensors", licensors)
@@ -970,7 +973,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	TMDbID = 0
 	MalID = 0
 	IMDbID = ""
-	Aired = ""
+	Aired = time.Time{}
 	Runtime = ""
 	Genres = nil
 	Studios = nil
