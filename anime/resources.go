@@ -42,9 +42,25 @@ func (server *AnimeScraper) Livechart(id int, title string, date time.Time) int 
 		if block != nil {
 			var found bool
 			block.Find(".text-sm").Each(func(index int, selection *goquery.Selection) {
-				if strings.Contains(strings.ToLower(selection.Text()), strings.ToLower(title)) {
-					found = true
-					return
+				if selection != nil {
+					hover := selection.Find(".link-hover")
+					if hover != nil {
+						href, ok := hover.Attr("href")
+						if ok {
+							if strings.Contains(href, "timetable") {
+								if hover.Text() != "" {
+									lay := "January 02, 2006"
+									parsedTime, err := time.Parse(lay, hover.Text())
+									if err == nil {
+										if parsedTime.Year() == date.Year() && parsedTime.Month() == date.Month() {
+											found = true
+											return
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			})
 			if found {
@@ -56,7 +72,11 @@ func (server *AnimeScraper) Livechart(id int, title string, date time.Time) int 
 		id = 0
 	}
 	if id == 0 {
-		query := fmt.Sprintf("https://www.livechart.me/search?q=%s", utils.CleanUnicode(title))
+		titled := utils.CleanUnicode(title)
+		titled = strings.ReplaceAll(strings.ToLower(titled), "movie", "")
+		titled = strings.ReplaceAll(strings.ToLower(titled), "gekijouban", "")
+
+		query := fmt.Sprintf("https://www.livechart.me/search?q=%s", titled)
 		req, err := http.NewRequest("GET", query, nil)
 		if err != nil {
 			return 0

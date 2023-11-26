@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bregydoc/gtranslate"
 	jikan "github.com/darenliang/jikan-go"
 	"github.com/dj-yacine-flutter/gojo-scraper/models"
 	"github.com/dj-yacine-flutter/gojo-scraper/tvdb"
@@ -907,7 +906,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	fmt.Println("LandscapePoster: ", LandscapePoster)
 	fmt.Println("LandscapeBlurHash: ", LandscapeBlurHash)
 
-	if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
+	/* if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
 		translation, err := gtranslate.TranslateWithParams(
 			utils.CleanOverview(malData.Data.Synopsis),
 			gtranslate.TranslationParams{
@@ -964,7 +963,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				},
 			}
 		}
-	}
+	} */
 
 	ReleaseYear = 0
 	AgeRating = ""
