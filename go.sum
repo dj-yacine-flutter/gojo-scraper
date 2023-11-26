@@ -1,7 +1,14 @@
 github.com/PuerkitoBio/goquery v1.8.1 h1:uQxhNlArOIdbrH1tr0UXwdVFgDcZDrZVdcpygAcwmWM=
 github.com/PuerkitoBio/goquery v1.8.1/go.mod h1:Q8ICL1kNUJ2sXGoAhPGUdYDJvgQgHzJsnnd3H7Ho5jQ=
+github.com/aerogo/http v1.1.5 h1:j0p68HiCtJp6CssxxxSUhX9uOPBomJMIKO4VKMRHQ0c=
+github.com/aerogo/http v1.1.5/go.mod h1:h+m3WxevpaifyVpRAMV58qt8ScXSZhU1a5DdvBkRwwE=
+github.com/akyoto/assert v0.2.4/go.mod h1:SoqVayyOmM/YSBnwOxJHCt4BCocoIrgeceWtJV701C0=
+github.com/akyoto/stringutils v0.3.1 h1:C+VGuXfud9SSo54QRfdQO+rgQiHmLS5f4nJ4yUOM+8I=
+github.com/akyoto/stringutils v0.3.1/go.mod h1:I1F9f8FF7gnAQyYp4PVAl+GJ2WBnaN6kNoYjidCV5Qk=
 github.com/andybalholm/cascadia v1.3.1 h1:nhxRkql1kdYCc8Snf7D5/D3spOX+dBgjA6u8x004T2c=
 github.com/andybalholm/cascadia v1.3.1/go.mod h1:R4bJ1UQfqADjvDa4P6HZHLh/3OxWWEqc0Sk8XGwHqvA=
+github.com/animenotifier/anilist v0.2.8 h1:slqsM2c6QL6AqRfUEyJP1Ha2Y7zArDG1+3KygoVKsz0=
+github.com/animenotifier/anilist v0.2.8/go.mod h1:qCP/teRFZffvMnRndkVu00V3roDgnA0Fk/aJ1ernP6A=
 github.com/bregydoc/gtranslate v0.0.0-20200913051839-1bd07f6c1fc5 h1:fpVDaadW68V+6vqxJHU9jrW0/z1i2MQYJZyk9w2cjpw=
 github.com/bregydoc/gtranslate v0.0.0-20200913051839-1bd07f6c1fc5/go.mod h1:153ZQv0q0e2+tPGhDsQsYTRlVRTWIYMicEvriLNX2ZY=
 github.com/buckket/go-blurhash v1.1.0 h1:X5M6r0LIvwdvKiUtiNcRL2YlmOfMzYobI3VCKCZc9Do=

@@ -10,7 +10,10 @@ require (
 )
 
 require (
+	github.com/aerogo/http v1.1.5 // indirect
+	github.com/akyoto/stringutils v0.3.1 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
+	github.com/animenotifier/anilist v0.2.8 // indirect
 	github.com/cardigann/go-cloudflare-scraper v0.0.0-20200425223932-91bd9b1006f2 // indirect
 	golang.org/x/net v0.7.0 // indirect
 )

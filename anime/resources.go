@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/dj-yacine-flutter/gojo-scraper/models"
 	"github.com/dj-yacine-flutter/gojo-scraper/utils"
 )
 
@@ -322,4 +323,178 @@ func (server *AnimeScraper) Kitsu(id int, title string, date time.Time) int {
 		}
 	}
 	return 0
+}
+
+func (server *AnimeScraper) NotifyMoe(id, title string, date time.Time) string {
+	if id != "" {
+		url := fmt.Sprintf("https://notify.moe/api/anime/%s", id)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			id = ""
+		}
+		req.Header.Set("authority", "notify.moe")
+		req.Header.Set("referer", url)
+		req.Header.Set("user-agent", UserAgent)
+
+		resp, err := server.HTTP.Do(req)
+		if err != nil {
+			id = ""
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == 200 {
+			anime := models.NotifyMoe{}
+			err = json.NewDecoder(resp.Body).Decode(&anime)
+			if err != nil {
+				id = ""
+			}
+
+			var created time.Time
+			if anime.StartDate != "" {
+				created, err = time.Parse(time.DateOnly, anime.StartDate)
+				if err != nil {
+					id = ""
+				}
+			} else {
+				created, err = time.Parse(time.DateOnly, anime.EndDate)
+				if err != nil {
+					id = ""
+				}
+			}
+
+			if created.String() != "" {
+				if created.Year() == date.Year() && created.Month() == date.Month() {
+					id = anime.ID
+				} else {
+					id = ""
+				}
+			} else {
+				var titles []string
+				titles = append(titles, anime.Title.Canonical)
+				titles = append(titles, anime.Title.English)
+				titles = append(titles, anime.Title.Japanese)
+				titles = append(titles, anime.Title.Hiragana)
+
+				for _, t := range titles {
+					if strings.Contains(utils.CleanTitle(t), utils.CleanTitle(title)) {
+						id = anime.ID
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if id == "" {
+		query := fmt.Sprintf("https://notify.moe/_/anime-search/%s", utils.CleanQuery(title))
+		req2, err := http.NewRequest("GET", query, nil)
+		if err != nil {
+			return ""
+		}
+
+		req2.Header.Set("authority", "notify.moe")
+		req2.Header.Set("user-agent", UserAgent)
+
+		resp2, err := server.HTTP.Do(req2)
+		if err != nil {
+			return ""
+		}
+		defer resp2.Body.Close()
+
+		if resp2.StatusCode == 200 {
+			doc, err := goquery.NewDocumentFromReader(resp2.Body)
+			if err != nil {
+				return ""
+			}
+
+			block := doc.Find(".anime-search")
+			if block != nil {
+				var found bool
+				block.Find(".profile-watching-list-item").Each(func(index int, selection *goquery.Selection) {
+					if found {
+						return
+					}
+					data, ok := selection.Attr("aria-label")
+					if ok {
+						href, ok := selection.Attr("href")
+						if ok {
+							s := strings.Split(href, "/")
+							id = s[len(s)-1]
+							if id != "" {
+								url := fmt.Sprintf("https://notify.moe/api/anime/%s", id)
+								req3, err := http.NewRequest("GET", url, nil)
+								if err != nil {
+									return
+								}
+
+								req3.Header.Set("authority", "notify.moe")
+								req3.Header.Set("referer", url)
+								req3.Header.Set("user-agent", UserAgent)
+
+								resp3, err := server.HTTP.Do(req3)
+								if err != nil {
+									return
+
+								}
+								defer resp3.Body.Close()
+
+								anime := models.NotifyMoe{}
+								err = json.NewDecoder(resp3.Body).Decode(&anime)
+								if err != nil {
+									return
+								}
+
+								var created time.Time
+								if anime.StartDate != "" {
+									created, err = time.Parse(time.DateOnly, anime.StartDate)
+									if err != nil {
+										return
+									}
+								} else {
+									created, err = time.Parse(time.DateOnly, anime.EndDate)
+									if err != nil {
+										return
+									}
+								}
+
+								if created.Year() == date.Year() && created.Month() == date.Month() {
+									id = anime.ID
+									found = true
+									return
+								}
+
+								if id == "" {
+									var titles []string
+									titles = append(titles, anime.Title.Canonical)
+									titles = append(titles, anime.Title.English)
+									titles = append(titles, anime.Title.Japanese)
+									titles = append(titles, anime.Title.Hiragana)
+
+									for _, t := range titles {
+										if strings.Contains(utils.CleanTitle(t), utils.CleanTitle(title)) {
+											id = anime.ID
+											found = true
+											break
+										}
+									}
+								}
+							}
+							if id == "" {
+								if strings.Contains(utils.CleanTitle(data), utils.CleanTitle(title)) {
+									found = true
+									return
+								}
+							}
+						}
+					}
+				})
+				if found {
+					return id
+				}
+			} else {
+				id = ""
+			}
+		}
+	}
+
+	return id
 }
