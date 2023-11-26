@@ -153,8 +153,9 @@ func (server *AnimeScraper) Anysearch(id int, title, originalTitle string, date 
 		block := doc.Find(".infoblock")
 		if block != nil {
 			var found bool
-			block.Find(".grey").Each(func(index int, selection *goquery.Selection) {
-				if strings.Contains(strings.ToLower(selection.Text()), strings.ToLower(originalTitle)) {
+			block.Find(".title").Each(func(index int, selection *goquery.Selection) {
+				grey := selection.Find(".grey")
+				if (grey != nil && strings.Contains(strings.ToLower(grey.Text()), strings.ToLower(originalTitle))) || strings.Contains(strings.ToLower(selection.Text()), strings.ToLower(title)) {
 					found = true
 					return
 				} else {

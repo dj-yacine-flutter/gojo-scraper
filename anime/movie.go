@@ -856,7 +856,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	}
 
 	LivechartID := server.Livechart(animeResources.Data.LivechartID, OriginalTitle, Aired)
-	AnysearchID := server.Anysearch(animeResources.Data.AnisearchID, malData.Data.Title, OriginalTitle, Aired)
+	AnysearchID := server.Anysearch(animeResources.Data.AnisearchID, malData.Data.TitleEnglish, OriginalTitle, Aired)
 	KitsuID := server.Kitsu(animeResources.Data.KitsuID, OriginalTitle, Aired)
 	NotifyMoeID := server.NotifyMoe(utils.CleanResText(animeResources.Data.NotifyMoeID), malData.Data.Title, Aired)
 	AnilistID := server.Anylist(malData.Data.MalId)
