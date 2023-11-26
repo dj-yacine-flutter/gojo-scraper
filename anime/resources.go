@@ -1,6 +1,7 @@
 package anime
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -497,4 +498,61 @@ func (server *AnimeScraper) NotifyMoe(id, title string, date time.Time) string {
 	}
 
 	return id
+}
+
+func (server *AnimeScraper) Anylist(mal int) int {
+	type Variables struct {
+		MALID int    `json:"malId"`
+		Type  string `json:"type"`
+	}
+
+	body := struct {
+		Query     string    `json:"query"`
+		Variables Variables `json:"variables"`
+	}{
+		Query: `
+			query ($malId: Int, $type: MediaType) {
+				Media(idMal: $malId, type: $type) {
+					id
+				}
+			}
+		`,
+		Variables: Variables{
+			MALID: mal,
+			Type:  "ANIME",
+		},
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return 0
+	}
+
+	req, err := http.NewRequest("POST", "https://graphql.anilist.co", bytes.NewBuffer(data))
+	if err != nil {
+		return 0
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("user-agent", UserAgent)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+
+	response := new(struct {
+		Data struct {
+			Media struct {
+				ID int `json:"id"`
+			} `json:"Media"`
+		} `json:"data"`
+	})
+
+	if err := json.NewDecoder(resp.Body).Decode(response); err != nil {
+		return 0
+	}
+
+	return response.Data.Media.ID
 }
