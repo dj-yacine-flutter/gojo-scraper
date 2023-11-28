@@ -41,6 +41,14 @@ type Titles struct {
 	Others  []string `json:"others"`
 }
 
+type Image struct {
+	Height    int    `json:"height"`
+	Width     int    `json:"width"`
+	Image     string `json:"image"`
+	Thumbnail string `json:"thumbnail"`
+	BlurHash  string `json:"blurHash"`
+}
+
 type Anime struct {
 	OriginalTitle       string         `json:"originalTitle"`
 	Aired               string         `json:"aired"`
@@ -57,20 +65,10 @@ type Anime struct {
 	Studios             []string       `json:"studios"`
 	ProductionCompanies []string       `json:"productionCompanies"`
 	Tags                []string       `json:"tags"`
+	Posters             []Image        `json:"posters"`
+	Backdrops           []Image        `json:"backdrops"`
+	Logos               []Image        `json:"logos"`
 	AnimeMetas          []MetaData     `json:"animeMetas"`
-}
-
-type Movie struct {
-	OriginalTitle     string     `json:"originalTitle"`
-	Aired             string     `json:"aired"`
-	ReleaseYear       int        `json:"releaseYear"`
-	Rating            string     `json:"rating"`
-	Duration          string     `json:"duration"`
-	PortriatPoster    string     `json:"portriatPoster"`
-	PortriatBlurHash  string     `json:"portriatBlurHash"`
-	LandscapePoster   string     `json:"landscapePoster"`
-	LandscapeBlurHash string     `json:"landscapeBlurHash"`
-	AnimeMetas        []MetaData `json:"animeMetas"`
 }
 
 type NotifyMoe struct {
@@ -132,16 +130,16 @@ type NotifyMoe struct {
 		Service   string `json:"service,omitempty"`
 		ServiceID string `json:"serviceId,omitempty"`
 	} `json:"mappings,omitempty"`
-	Posts     []string  `json:"posts,omitempty"`
-	Likes     any       `json:"likes,omitempty"`
-	Created   string `json:"created,omitempty"`
-	CreatedBy string    `json:"createdBy,omitempty"`
-	Edited    string    `json:"edited,omitempty"`
-	EditedBy  string    `json:"editedBy,omitempty"`
-	IsDraft   bool      `json:"isDraft,omitempty"`
-	Studios   []string  `json:"studios,omitempty"`
-	Producers []string  `json:"producers,omitempty"`
-	Licensors any       `json:"licensors,omitempty"`
+	Posts     []string `json:"posts,omitempty"`
+	Likes     any      `json:"likes,omitempty"`
+	Created   string   `json:"created,omitempty"`
+	CreatedBy string   `json:"createdBy,omitempty"`
+	Edited    string   `json:"edited,omitempty"`
+	EditedBy  string   `json:"editedBy,omitempty"`
+	IsDraft   bool     `json:"isDraft,omitempty"`
+	Studios   []string `json:"studios,omitempty"`
+	Producers []string `json:"producers,omitempty"`
+	Licensors any      `json:"licensors,omitempty"`
 	Links     []struct {
 		Title string `json:"title,omitempty"`
 		URL   string `json:"url,omitempty"`

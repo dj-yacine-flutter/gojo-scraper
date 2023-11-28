@@ -158,6 +158,9 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Tags              []string
 		PsCs              []string
 		Titles            models.Titles
+		Posters           []models.Image
+		Backdrops         []models.Image
+		Logos             []models.Image
 	)
 
 	ReleaseYear = 0
@@ -179,6 +182,9 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	Tags = nil
 	PsCs = nil
 	Titles = models.Titles{}
+	Posters = []models.Image{}
+	Backdrops = []models.Image{}
+	Logos = []models.Image{}
 
 	malData, err := jikan.GetAnimeById(int(id))
 	if err != nil {
@@ -351,6 +357,40 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 							}
 						}
 					}
+					if len(movie.Data.Artworks) > 0 {
+						for _, d := range movie.Data.Artworks {
+							if d.Image != "" {
+								if d.Type == 15 {
+									bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+									Backdrops = append(Backdrops, models.Image{
+										Height:    d.Height,
+										Width:     d.Width,
+										Image:     d.Image,
+										Thumbnail: d.Thumbnail,
+										BlurHash:  bb,
+									})
+								} else if d.Type == 14 {
+									pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+									Posters = append(Posters, models.Image{
+										Height:    d.Height,
+										Width:     d.Width,
+										Image:     d.Image,
+										Thumbnail: d.Thumbnail,
+										BlurHash:  pp,
+									})
+								} else if d.Type == 25 {
+									ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+									Logos = append(Logos, models.Image{
+										Height:    d.Height,
+										Width:     d.Width,
+										Image:     d.Image,
+										Thumbnail: d.Thumbnail,
+										BlurHash:  ll,
+									})
+								}
+							}
+						}
+					}
 					//klk, _ := json.Marshal(movie)
 					//fmt.Println(string(klk))
 				}
@@ -361,33 +401,67 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 					continue
 				}
 				TVDbID = int(newTVDBid)
-				movie, err := server.TVDB.GetSeriesByIDExtanded(TVDbID)
+				serie, err := server.TVDB.GetSeriesByIDExtanded(TVDbID)
 				if err != nil {
 					continue
 				}
-				if movie != nil {
-					for _, r := range movie.Data.RemoteIds {
+				if serie != nil {
+					for _, r := range serie.Data.RemoteIds {
 						if strings.Contains(strings.ToLower(r.SourceName), "imdb") && r.SourceName != "" {
 							IMDbID = r.ID
 						}
 					}
-					if len(movie.Data.Genres) > 0 {
-						for _, g := range movie.Data.Genres {
+					if len(serie.Data.Genres) > 0 {
+						for _, g := range serie.Data.Genres {
 							Genres = append(Genres, g.Name)
 						}
 					}
-					if len(movie.Data.Companies) > 0 {
-						for _, p := range movie.Data.Companies {
+					if len(serie.Data.Companies) > 0 {
+						for _, p := range serie.Data.Companies {
 							if p.Name != "" {
 								licensors = append(licensors, p.Name)
 							}
 						}
 					}
-					if movie.Data.OriginalNetwork.Name != "" {
-						licensors = append(licensors, movie.Data.OriginalNetwork.Name)
+					if serie.Data.OriginalNetwork.Name != "" {
+						licensors = append(licensors, serie.Data.OriginalNetwork.Name)
 					}
-					if movie.Data.LatestNetwork.Name != "" {
-						licensors = append(licensors, movie.Data.LatestNetwork.Name)
+					if serie.Data.LatestNetwork.Name != "" {
+						licensors = append(licensors, serie.Data.LatestNetwork.Name)
+					}
+					if len(serie.Data.Artworks) > 0 {
+						for _, d := range serie.Data.Artworks {
+							if d.Image != "" {
+								if d.Type == 15 {
+									bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+									Backdrops = append(Backdrops, models.Image{
+										Height:    d.Height,
+										Width:     d.Width,
+										Image:     d.Image,
+										Thumbnail: d.Thumbnail,
+										BlurHash:  bb,
+									})
+								} else if d.Type == 14 {
+									pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+									Posters = append(Posters, models.Image{
+										Height:    d.Height,
+										Width:     d.Width,
+										Image:     d.Image,
+										Thumbnail: d.Thumbnail,
+										BlurHash:  pp,
+									})
+								} else if d.Type == 25 {
+									ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+									Logos = append(Logos, models.Image{
+										Height:    d.Height,
+										Width:     d.Width,
+										Image:     d.Image,
+										Thumbnail: d.Thumbnail,
+										BlurHash:  ll,
+									})
+								}
+							}
+						}
 					}
 					//klk, _ := json.Marshal(movie)
 					//fmt.Println(string(klk))
@@ -438,6 +512,40 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 					for _, d := range movie.Data.Companies.Distributor {
 						if d.Name != "" {
 							licensors = append(licensors, d.Name)
+						}
+					}
+				}
+				if len(movie.Data.Artworks) > 0 {
+					for _, d := range movie.Data.Artworks {
+						if d.Image != "" {
+							if d.Type == 15 {
+								bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+								Backdrops = append(Backdrops, models.Image{
+									Height:    d.Height,
+									Width:     d.Width,
+									Image:     d.Image,
+									Thumbnail: d.Thumbnail,
+									BlurHash:  bb,
+								})
+							} else if d.Type == 14 {
+								pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+								Posters = append(Posters, models.Image{
+									Height:    d.Height,
+									Width:     d.Width,
+									Image:     d.Image,
+									Thumbnail: d.Thumbnail,
+									BlurHash:  pp,
+								})
+							} else if d.Type == 25 {
+								ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+								Logos = append(Logos, models.Image{
+									Height:    d.Height,
+									Width:     d.Width,
+									Image:     d.Image,
+									Thumbnail: d.Thumbnail,
+									BlurHash:  ll,
+								})
+							}
 						}
 					}
 				}
@@ -577,6 +685,49 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 							}
 						}
 					}
+
+					amimg, _ := server.TMDB.GetMovieImages(TMDbID, nil)
+					if err == nil {
+						if amimg != nil {
+							for _, l := range amimg.Logos {
+								if l.FilePath != "" {
+									ll, _ := utils.GetBlurHash("https://image.tmdb.org/t/p/w45"+l.FilePath, "")
+									Logos = append(Logos, models.Image{
+										Height:    l.Height,
+										Width:     l.Width,
+										Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + l.FilePath)),
+										Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w300" + l.FilePath),
+										BlurHash:  ll,
+									})
+								}
+							}
+							for _, b := range amimg.Backdrops {
+								if b.FilePath != "" {
+									bb, _ := utils.GetBlurHash(server.DecodeIMG+b.FilePath, "")
+									Backdrops = append(Backdrops, models.Image{
+										Height:    b.Height,
+										Width:     b.Width,
+										Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + b.FilePath)),
+										Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w500" + b.FilePath),
+										BlurHash:  bb,
+									})
+								}
+							}
+							for _, p := range amimg.Posters {
+								if p.FilePath != "" {
+									pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
+									Posters = append(Posters, models.Image{
+										Height:    p.Height,
+										Width:     p.Width,
+										Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
+										Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
+										BlurHash:  pp,
+									})
+
+								}
+							}
+						}
+					}
 					break
 				}
 			}
@@ -604,6 +755,48 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				for _, p := range anime.ProductionCompanies {
 					if p.Name != "" {
 						licensors = append(licensors, p.Name)
+					}
+				}
+			}
+			amimg, _ := server.TMDB.GetMovieImages(TMDbID, nil)
+			if err == nil {
+				if amimg != nil {
+					for _, l := range amimg.Logos {
+						if l.FilePath != "" {
+							ll, _ := utils.GetBlurHash("https://image.tmdb.org/t/p/w45"+l.FilePath, "")
+							Logos = append(Logos, models.Image{
+								Height:    l.Height,
+								Width:     l.Width,
+								Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + l.FilePath)),
+								Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w300" + l.FilePath),
+								BlurHash:  ll,
+							})
+						}
+					}
+					for _, b := range amimg.Backdrops {
+						if b.FilePath != "" {
+							bb, _ := utils.GetBlurHash(server.DecodeIMG+b.FilePath, "")
+							Backdrops = append(Backdrops, models.Image{
+								Height:    b.Height,
+								Width:     b.Width,
+								Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + b.FilePath)),
+								Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w500" + b.FilePath),
+								BlurHash:  bb,
+							})
+						}
+					}
+					for _, p := range amimg.Posters {
+						if p.FilePath != "" {
+							pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
+							Posters = append(Posters, models.Image{
+								Height:    p.Height,
+								Width:     p.Width,
+								Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
+								Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
+								BlurHash:  pp,
+							})
+
+						}
 					}
 				}
 			}
@@ -657,6 +850,48 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 							for _, p := range anime.ProductionCompanies {
 								if p.Name != "" {
 									licensors = append(licensors, p.Name)
+								}
+							}
+						}
+						amimg, _ := server.TMDB.GetMovieImages(TMDbID, nil)
+						if err == nil {
+							if amimg != nil {
+								for _, l := range amimg.Logos {
+									if l.FilePath != "" {
+										ll, _ := utils.GetBlurHash("https://image.tmdb.org/t/p/w45"+l.FilePath, "")
+										Logos = append(Logos, models.Image{
+											Height:    l.Height,
+											Width:     l.Width,
+											Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + l.FilePath)),
+											Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w300" + l.FilePath),
+											BlurHash:  ll,
+										})
+									}
+								}
+								for _, b := range amimg.Backdrops {
+									if b.FilePath != "" {
+										bb, _ := utils.GetBlurHash(server.DecodeIMG+b.FilePath, "")
+										Backdrops = append(Backdrops, models.Image{
+											Height:    b.Height,
+											Width:     b.Width,
+											Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + b.FilePath)),
+											Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w500" + b.FilePath),
+											BlurHash:  bb,
+										})
+									}
+								}
+								for _, p := range amimg.Posters {
+									if p.FilePath != "" {
+										pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
+										Posters = append(Posters, models.Image{
+											Height:    p.Height,
+											Width:     p.Width,
+											Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
+											Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
+											BlurHash:  pp,
+										})
+
+									}
 								}
 							}
 						}
@@ -824,7 +1059,9 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	for _, s := range utils.CleanDuplicates(utils.CleanStringArray(Studios)) {
 		for _, r := range utils.CleanDuplicates(utils.CleanStringArray(licensors)) {
 			if !strings.Contains(utils.CleanTitle(r), utils.CleanTitle(s)) {
-				PsCs = append(PsCs, r)
+				if strings.TrimSpace(r) != "ltd." {
+					PsCs = append(PsCs, r)
+				}
 			}
 		}
 	}
@@ -876,6 +1113,9 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Tags:                utils.CleanStringArray(Tags),
 		ProductionCompanies: PsCs,
 		Titles:              Titles,
+		Backdrops:           Backdrops,
+		Posters:             Posters,
+		Logos:               Logos,
 		AnimeResources: models.AnimeResources{
 			LivechartID:   LivechartID,
 			AnimePlanetID: utils.CleanResText(AnimePlanetID),
@@ -906,7 +1146,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	fmt.Println("LandscapePoster: ", LandscapePoster)
 	fmt.Println("LandscapeBlurHash: ", LandscapeBlurHash)
 
-	/* if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
+	/* 	if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
 		translation, err := gtranslate.TranslateWithParams(
 			utils.CleanOverview(malData.Data.Synopsis),
 			gtranslate.TranslationParams{
