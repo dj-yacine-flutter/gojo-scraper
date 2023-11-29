@@ -49,6 +49,12 @@ type Image struct {
 	BlurHash  string `json:"blurHash"`
 }
 
+type Trailer struct {
+	Official bool   `json:"official"`
+	Host     string `json:"host"`
+	Key      string `json:"url"`
+}
+
 type Anime struct {
 	OriginalTitle       string         `json:"originalTitle"`
 	Aired               string         `json:"aired"`
@@ -68,6 +74,7 @@ type Anime struct {
 	Posters             []Image        `json:"posters"`
 	Backdrops           []Image        `json:"backdrops"`
 	Logos               []Image        `json:"logos"`
+	Trailers            []Trailer      `json:"trialers"`
 	AnimeMetas          []MetaData     `json:"animeMetas"`
 }
 

@@ -5,9 +5,43 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/dj-yacine-flutter/gojo-scraper/models"
 )
 
-func ExtractID(url string) (int) {
+func ExtractYTKey(url string) string {
+	ytPatterns := []*regexp.Regexp{
+		regexp.MustCompile(`(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})`),
+		regexp.MustCompile(`(?:youtube\.com|youtu\.?be)\/watch\?v=([a-zA-Z0-9_\-]+)(&.+)?$`),
+		regexp.MustCompile(`(?:youtu\.?be)\/([a-zA-Z0-9_\-]+)$`),
+		regexp.MustCompile(`(?:youtu\.?be)\/embed\/([a-zA-Z0-9_\-]+)$`),
+		regexp.MustCompile(`^(https?:\/\/)?(www\.)?youtu\.?be\.com\/share\/([a-zA-Z0-9_\-]+)$`),
+	}
+
+	for _, pattern := range ytPatterns {
+		matches := pattern.FindStringSubmatch(url)
+		if len(matches) >= 2 {
+			return matches[1]
+		}
+	}
+
+	return ""
+}
+
+func CleanTrailers(Trailers []models.Trailer) []models.Trailer {
+	unique := make(map[string]struct{})
+	result := make([]models.Trailer, 0)
+
+	for _, item := range Trailers {
+		if _, found := unique[item.Key]; !found {
+			unique[item.Key] = struct{}{}
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func ExtractID(url string) int {
 	// Split the URL by "/"
 	parts := strings.Split(url, "/")
 

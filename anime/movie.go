@@ -161,6 +161,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Posters           []models.Image
 		Backdrops         []models.Image
 		Logos             []models.Image
+		Trailers          []models.Trailer
 	)
 
 	ReleaseYear = 0
@@ -185,6 +186,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	Posters = []models.Image{}
 	Backdrops = []models.Image{}
 	Logos = []models.Image{}
+	Trailers = []models.Trailer{}
 
 	malData, err := jikan.GetAnimeById(int(id))
 	if err != nil {
@@ -391,6 +393,17 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 							}
 						}
 					}
+					if len(movie.Data.Trailers) > 0 {
+						for _, t := range movie.Data.Trailers {
+							if utils.ExtractYTKey(t.URL) != "" {
+								Trailers = append(Trailers, models.Trailer{
+									Official: true,
+									Host:     "YouTube",
+									Key:      utils.ExtractYTKey(t.URL),
+								})
+							}
+						}
+					}
 					//klk, _ := json.Marshal(movie)
 					//fmt.Println(string(klk))
 				}
@@ -460,6 +473,17 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 										BlurHash:  ll,
 									})
 								}
+							}
+						}
+					}
+					if len(serie.Data.Trailers) > 0 {
+						for _, t := range serie.Data.Trailers {
+							if utils.ExtractYTKey(t.URL) != "" {
+								Trailers = append(Trailers, models.Trailer{
+									Official: true,
+									Host:     "YouTube",
+									Key:      utils.ExtractYTKey(t.URL),
+								})
 							}
 						}
 					}
@@ -546,6 +570,17 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 									BlurHash:  ll,
 								})
 							}
+						}
+					}
+				}
+				if len(movie.Data.Trailers) > 0 {
+					for _, t := range movie.Data.Trailers {
+						if utils.ExtractYTKey(t.URL) != "" {
+							Trailers = append(Trailers, models.Trailer{
+								Official: true,
+								Host:     "YouTube",
+								Key:      utils.ExtractYTKey(t.URL),
+							})
 						}
 					}
 				}
@@ -728,6 +763,20 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 							}
 						}
 					}
+					tttt, _ := server.TMDB.GetMovieVideos(TMDbID, nil)
+					if len(tttt.Results) > 0 {
+						for _, t := range tttt.Results {
+							if strings.Contains(strings.ToLower(t.Site), "youtube") {
+								if t.Key != "" {
+									Trailers = append(Trailers, models.Trailer{
+										Official: true,
+										Host:     "YouTube",
+										Key:      t.Key,
+									})
+								}
+							}
+						}
+					}
 					break
 				}
 			}
@@ -797,6 +846,21 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 							})
 
 						}
+					}
+				}
+			}
+			tttt, _ := server.TMDB.GetMovieVideos(TMDbID, nil)
+			if len(tttt.Results) > 0 {
+				for _, t := range tttt.Results {
+					if strings.Contains(strings.ToLower(t.Site), "youtube") {
+						if t.Key != "" {
+							Trailers = append(Trailers, models.Trailer{
+								Official: true,
+								Host:     "YouTube",
+								Key:      t.Key,
+							})
+						}
+
 					}
 				}
 			}
@@ -892,6 +956,21 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 										})
 
 									}
+								}
+							}
+						}
+						tttt, _ := server.TMDB.GetMovieVideos(TMDbID, nil)
+						if len(tttt.Results) > 0 {
+							for _, t := range tttt.Results {
+								if strings.Contains(strings.ToLower(t.Site), "youtube") {
+									if t.Key != "" {
+										Trailers = append(Trailers, models.Trailer{
+											Official: true,
+											Host:     "YouTube",
+											Key:      t.Key,
+										})
+									}
+
 								}
 							}
 						}
@@ -1116,6 +1195,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Backdrops:           Backdrops,
 		Posters:             Posters,
 		Logos:               Logos,
+		Trailers:            utils.CleanTrailers(Trailers),
 		AnimeResources: models.AnimeResources{
 			LivechartID:   LivechartID,
 			AnimePlanetID: utils.CleanResText(AnimePlanetID),
