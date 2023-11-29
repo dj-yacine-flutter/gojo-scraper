@@ -52,7 +52,7 @@ type Image struct {
 type Trailer struct {
 	Official bool   `json:"official"`
 	Host     string `json:"host"`
-	Key      string `json:"url"`
+	Key      string `json:"key"`
 }
 
 type Anime struct {
@@ -74,7 +74,7 @@ type Anime struct {
 	Posters             []Image        `json:"posters"`
 	Backdrops           []Image        `json:"backdrops"`
 	Logos               []Image        `json:"logos"`
-	Trailers            []Trailer      `json:"trialers"`
+	Trailers            []Trailer      `json:"trailers"`
 	AnimeMetas          []MetaData     `json:"animeMetas"`
 }
 
