@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bregydoc/gtranslate"
 	jikan "github.com/darenliang/jikan-go"
 	"github.com/dj-yacine-flutter/gojo-scraper/models"
 	"github.com/dj-yacine-flutter/gojo-scraper/tvdb"
@@ -89,18 +88,18 @@ func (server *AnimeScraper) getAniDBIDFromTitles(malData *jikan.AnimeById) (int,
 			for _, mt := range titles {
 				titleMatches := strings.Contains(strings.ToLower(title.Value), strings.ToLower(mt))
 				if titleMatches {
-					//fmt.Printf("AniDB title : %s || Mal title : %s\n", title.Value, malData.Data.TitleEnglish)
+					//server.LOG.Info().Msgf("AniDB title : %s || Mal title : %s\n", title.Value, malData.Data.TitleEnglish)
 					aniDBData, err := server.GetAniDBData(v.Aid)
 					if err != nil {
 						return 0, err
 					}
 					typeM := strings.Contains(strings.ToLower(aniDBData.Type), strings.ToLower(malData.Data.Type))
-					//fmt.Printf("AniDB type : %s || Mal type : %s\n", aniDBData.Type, malData.Data.Type)
+					//server.LOG.Info().Msgf("AniDB type : %s || Mal type : %s\n", aniDBData.Type, malData.Data.Type)
 					aniY, err := utils.ExtractYear(aniDBData.Startdate)
 					if err != nil {
 						return 0, err
 					}
-					//fmt.Printf("AniDB year : %d || Mal year : %d\n", aniY, malData.Data.Aired.From.Year())
+					//server.LOG.Info().Msgf("AniDB year : %d || Mal year : %d\n", aniY, malData.Data.Aired.From.Year())
 					yearM := malData.Data.Aired.From.Year() == aniY
 					if typeM && yearM {
 						return v.Aid, nil
@@ -124,6 +123,21 @@ func (server *AnimeScraper) searchAniDBID(malData *jikan.AnimeById, links []Link
 		return 0, fmt.Errorf("there is no AniDB ID for this anime")
 	}
 	return anidbID, nil
+}
+
+func (server *AnimeScraper) getResourceByIDs(anidbID, malID int) (AnimeResources, error) {
+	for _, d := range GlobalAnimeResources {
+		if anidbID == d.AnidbID {
+			if d.Data.MalID != 0 && malID != 0 {
+				if d.Data.MalID == malID {
+					return d, nil
+				}
+			} else {
+				return d, nil
+			}
+		}
+	}
+	return AnimeResources{}, fmt.Errorf("no resource found for this anime")
 }
 
 func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request) {
@@ -165,30 +179,6 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Trailers          []models.Trailer
 	)
 
-	ReleaseYear = 0
-	AgeRating = ""
-	PortriatPoster = ""
-	PortriatBlurHash = ""
-	LandscapePoster = ""
-	LandscapeBlurHash = ""
-	AnimePlanetID = ""
-	TVDbID = 0
-	OriginalTitle = ""
-	TMDbID = 0
-	MalID = 0
-	IMDbID = ""
-	Aired = time.Time{}
-	Runtime = ""
-	Genres = nil
-	Studios = nil
-	Tags = nil
-	PsCs = nil
-	Titles = models.Titles{}
-	Posters = []models.Image{}
-	Backdrops = []models.Image{}
-	Logos = []models.Image{}
-	Trailers = []models.Trailer{}
-
 	malData, err := jikan.GetAnimeById(int(id))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("there no data with this id: %s", err.Error()), http.StatusNotFound)
@@ -227,7 +217,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	}
 
 	MalID = malData.Data.MalId
-	animeResources, err := server.findResourceByAniDBandmalID(AniDBID, MalID)
+	animeResources, err := server.getResourceByIDs(AniDBID, MalID)
 	if err != nil {
 		err = nil
 		animeResources = AnimeResources{}
@@ -289,12 +279,12 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 	}
 	for _, a := range totalSearch.Data {
-		fmt.Printf("search ID: %s\n", a.ID)
-		fmt.Printf("search TVDB: %s\n", a.TvdbID)
-		fmt.Printf("search Name: %s\n", a.Name)
-		fmt.Printf("search Year: %s\n", a.Year)
-		fmt.Printf("search ExtendedTitle: %s\n", a.ExtendedTitle)
-		fmt.Printf("search FirstAirTime: %s\n", a.FirstAirTime)
+		server.LOG.Info().Msgf("search ID: %s", a.ID)
+		server.LOG.Info().Msgf("search TVDB: %s", a.TvdbID)
+		server.LOG.Info().Msgf("search Name: %s", a.Name)
+		server.LOG.Info().Msgf("search Year: %s", a.Year)
+		server.LOG.Info().Msgf("search ExtendedTitle: %s", a.ExtendedTitle)
+		server.LOG.Info().Msgf("search FirstAirTime: %s", a.FirstAirTime)
 
 		qDate, err := time.Parse(time.DateOnly, a.FirstAirTime)
 		if err != nil {
@@ -327,9 +317,9 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 							IMDbID = r.ID
 						}
 					}
-					gg, _ := json.Marshal(&movie)
+					//					gg, _ := json.Marshal(&movie)
 
-					fmt.Printf("%s \n\n", string(gg))
+					//					server.LOG.Info().Msgf("%s \n\n", string(gg))
 					if len(movie.Data.Genres) > 0 {
 						for _, g := range movie.Data.Genres {
 							Genres = append(Genres, g.Name)
@@ -406,7 +396,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 						}
 					}
 					//klk, _ := json.Marshal(movie)
-					//fmt.Println(string(klk))
+					//server.LOG.Info().Msgf(string(klk))
 				}
 				break
 			} else if strings.Contains(a.Type, "tv") {
@@ -489,7 +479,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 						}
 					}
 					//klk, _ := json.Marshal(movie)
-					//fmt.Println(string(klk))
+					//server.LOG.Info().Msgf(string(klk))
 				}
 				break
 			}
@@ -499,8 +489,8 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	if TVDbID == 0 {
 		if animeResources.Data.TheTVdbID != 0 {
 			movie, err := server.TVDB.GetMovieByIDExtended(animeResources.Data.TheTVdbID)
-			//fmt.Println("movie ", movie)
-			//fmt.Println("movie error", err.Error())
+			//server.LOG.Info().Msgf("movie ", movie)
+			//server.LOG.Info().Msgf("movie error", err.Error())
 			if err != nil {
 				TVDbID = animeResources.Data.TheTVdbID
 			}
@@ -593,11 +583,12 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	for _, r := range AniDBData.Resources.Resource {
 		if strings.Contains(r.Type, "44") {
 			if len(r.Externalentity) > 0 {
-				gg, err := json.Marshal(r.Externalentity)
-				if err != nil {
-					continue
-				}
-				fmt.Printf("%s \n\n", string(gg))
+				//gg, err := json.Marshal(r.Externalentity)
+				//if err != nil {
+				//	continue
+				//}
+				//
+				//server.LOG.Info().Msgf("%s \n\n", string(gg))
 				for _, f := range r.Externalentity {
 					for _, v := range f.Identifier {
 						id, err := strconv.Atoi(v)
@@ -611,7 +602,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	//	fmt.Printf("TMdb id bf res : %v\n\n", TMDBIDs)
+	//	server.LOG.Info().Msgf("TMdb id bf res : %v\n\n", TMDBIDs)
 
 	if animeResources.Data.TMDdID != nil {
 		tt, err := animeResources.Data.TMDdID.MarshalJSON()
@@ -632,21 +623,21 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	var TMDBRuntime string
 	var TMDBTitle string
 	if len(TMDBIDs) > 0 {
-		//		fmt.Println("mmmmm 0")
+		//		server.LOG.Info().Msgf("mmmmm 0")
 		for _, l := range TMDBIDs {
 			TMDbID = l
 			anime, err := server.TMDB.GetMovieDetails(TMDbID, nil)
-			//			fmt.Println("mmmmm 1")
+			//			server.LOG.Info().Msgf("mmmmm 1")
 			//			gg, _ := json.Marshal(&anime)
 			//
-			//			fmt.Printf("%s \n\n", string(gg))
+			//			server.LOG.Info().Msgf("%s \n\n", string(gg))
 			if err != nil {
-				//				fmt.Printf("TMDB.GetMovieDetails Error: %v \n\n", err)
+				//				server.LOG.Info().Msgf("TMDB.GetMovieDetails Error: %v \n\n", err)
 				PortriatBlurHash = ""
 				LandscapeBlurHash = ""
 				TMDbID = 0
 			} else {
-				//				fmt.Println("mmmmm 2")
+				//				server.LOG.Info().Msgf("mmmmm 2")
 				var rd bool
 				if anime.ReleaseDate != "" {
 					eDate, err := time.Parse(time.DateOnly, anime.ReleaseDate)
@@ -656,14 +647,14 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 						TMDbID = 0
 					}
 					qDate := malData.Data.Aired.From
-					//					fmt.Printf("anime tmdb date : %s\n", eDate.String())
-					//					fmt.Printf("anime mal date : %s\n", qDate.String())
+					//					server.LOG.Info().Msgf("anime tmdb date : %s\n", eDate.String())
+					//					server.LOG.Info().Msgf("anime mal date : %s\n", qDate.String())
 					if eDate.Year() == qDate.Year() && eDate.Month() == qDate.Month() {
 						rd = true
 					}
 
 				} else {
-					//					fmt.Println("mmmmm 3")
+					//					server.LOG.Info().Msgf("mmmmm 3")
 					newAnime, err := server.TMDB.GetMovieReleaseDates(TMDbID)
 					if err != nil {
 						PortriatBlurHash = ""
@@ -699,7 +690,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				if rd {
 					//					TMDBRuntime = fmt.Sprintf("%dm", anime.Runtime)
 					//					TMDBTitle = utils.CleanTitle(anime.Title)
-					//					fmt.Println("mmmmm 4")
+					//					server.LOG.Info().Msgf("mmmmm 4")
 					if OriginalTitle == "" {
 						OriginalTitle = anime.OriginalTitle
 					}
@@ -784,7 +775,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	//	fmt.Printf("TMdb id af res : %v\n\n", TMDBIDs)
+	//	server.LOG.Info().Msgf("TMdb id af res : %v\n\n", TMDBIDs)
 
 	if TMDbID != 0 && PortriatBlurHash == "" && LandscapeBlurHash == "" {
 		anime, _ := server.TMDB.GetMovieDetails(TMDbID, nil)
@@ -870,7 +861,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		querys, _ := server.TMDB.GetSearchMulti(malData.Data.TitleEnglish, nil)
 		if querys != nil {
 			for _, q := range querys.Results {
-				fmt.Println("query id :", q.ID)
+				server.LOG.Info().Msgf("query id: %d\n", q.ID)
 				aDate, err := time.Parse(time.DateOnly, AniDBData.Startdate)
 				if err != nil {
 					continue
@@ -887,8 +878,8 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 						continue
 					}
 				}
-				//				fmt.Println("query Year: ", qDate.String())
-				//				fmt.Println("aniDB Year: ", aDate.String())
+				//				server.LOG.Info().Msgf("query Year: ", qDate.String())
+				//				server.LOG.Info().Msgf("aniDB Year: ", aDate.String())
 				if aDate.Year() == qDate.Year() {
 					if strings.Contains(strings.ToLower(q.MediaType), "movie") {
 						TMDbID = int(q.ID)
@@ -1213,21 +1204,20 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		},
 	}
 
-	fmt.Println("Licensors", licensors)
-	fmt.Println("TMDBID", TMDbID)
-	fmt.Println("TVDBID", TVDbID)
-	fmt.Println("Aired", Aired)
-	fmt.Println("Runtime", Runtime)
-	fmt.Printf("AniDB Episodes: %d\n", len(AniDBData.Episodes.Episode))
-	fmt.Println("OriginalTitle", OriginalTitle)
-	fmt.Println("ReleaseYear: ", ReleaseYear)
-	fmt.Println("AnimeResources: ", animeResources)
-	fmt.Println("PortriatPoster: ", PortriatPoster)
-	fmt.Println("PortriatBlurHash: ", PortriatBlurHash)
-	fmt.Println("LandscapePoster: ", LandscapePoster)
-	fmt.Println("LandscapeBlurHash: ", LandscapeBlurHash)
+	server.LOG.Info().Msgf("Licensors: %v", licensors)
+	server.LOG.Info().Msgf("TMDBID: %d", TMDbID)
+	server.LOG.Info().Msgf("TVDBID: %d", TVDbID)
+	server.LOG.Info().Msgf("Aired: %v", Aired)
+	server.LOG.Info().Msgf("Runtime: %s", Runtime)
+	server.LOG.Info().Msgf("AniDB Episodes: %d", len(AniDBData.Episodes.Episode))
+	server.LOG.Info().Msgf("OriginalTitle: %s", OriginalTitle)
+	server.LOG.Info().Msgf("ReleaseYear: %d", ReleaseYear)
+	server.LOG.Info().Msgf("PortriatPoster: %s", PortriatPoster)
+	server.LOG.Info().Msgf("PortriatBlurHash: %s", PortriatBlurHash)
+	server.LOG.Info().Msgf("LandscapePoster: %s", LandscapePoster)
+	server.LOG.Info().Msgf("LandscapeBlurHash: %s", LandscapeBlurHash)
 
-	if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
+	/* 	if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
 		translation, err := gtranslate.TranslateWithParams(
 			utils.CleanOverview(malData.Data.Synopsis),
 			gtranslate.TranslationParams{
@@ -1284,26 +1274,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				},
 			}
 		}
-	}
-
-	ReleaseYear = 0
-	AgeRating = ""
-	PortriatPoster = ""
-	PortriatBlurHash = ""
-	LandscapePoster = ""
-	LandscapeBlurHash = ""
-	AnimePlanetID = ""
-	TVDbID = 0
-	OriginalTitle = ""
-	TMDbID = 0
-	MalID = 0
-	IMDbID = ""
-	Aired = time.Time{}
-	Runtime = ""
-	Genres = nil
-	Studios = nil
-	Tags = nil
-	PsCs = nil
+	} */
 
 	response, err := json.Marshal(animeData)
 	if err != nil {

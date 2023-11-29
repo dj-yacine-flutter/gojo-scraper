@@ -1,7 +1,8 @@
 package models
 
 var (
-	Languages = []string{"ar",
+	Languages = []string{
+		"ar",
 		"az",
 		"bg",
 		"ca",

@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
+	"os"
 
 	tmdb "github.com/cyruzin/golang-tmdb"
 	anime "github.com/dj-yacine-flutter/gojo-scraper/anime"
 	"github.com/dj-yacine-flutter/gojo-scraper/tvdb"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
@@ -17,9 +19,11 @@ type Server struct {
 
 func main() {
 
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
 	tmdbClient, err := tmdb.Init("cd74b33da8b164701b53cc22db416aea")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 		return
 	}
 	tmdbClient.SetClientAutoRetry()
@@ -27,7 +31,7 @@ func main() {
 
 	proxy, err := url.Parse("http://127.0.0.1:8118")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 		return
 	}
 
@@ -46,15 +50,14 @@ func main() {
 		Pin:    "",
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 		return
 	}
 
 	server := Server{
-		AnimeScraper: anime.NewAnimeScraper(tmdbClient, httpClient, tvdbClient, Oimg, Dimg),
+		AnimeScraper: anime.NewAnimeScraper(tmdbClient, httpClient, tvdbClient, &log.Logger, Oimg, Dimg),
 	}
 
-	http.HandleFunc("/anime", server.GetAnime)
 	http.HandleFunc("/anime/movie", server.GetAnimeMovie)
 
 	fmt.Println("Server is running on port 3333")
