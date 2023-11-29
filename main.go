@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -60,6 +59,6 @@ func main() {
 
 	http.HandleFunc("/anime/movie", server.GetAnimeMovie)
 
-	fmt.Println("Server is running on port 3333")
+	log.Info().Msg("Server is running on port 3333\n")
 	http.ListenAndServe(":3333", nil)
 }
