@@ -51,7 +51,7 @@ func main() {
 	}
 
 	server := Server{
-		AnimeScraper: anime.NewAnimeScraper(tmdbClient, httpClient, tvdbClient, Oimg, Dimg, "http://127.0.0.1:8118"),
+		AnimeScraper: anime.NewAnimeScraper(tmdbClient, httpClient, tvdbClient, Oimg, Dimg),
 	}
 
 	http.HandleFunc("/anime", server.GetAnime)
