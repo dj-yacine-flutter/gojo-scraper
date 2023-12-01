@@ -188,13 +188,18 @@ func (am *AnimeScraper) GetAniDBData(id int) (AniDB, error) {
 	return animeXML, nil
 }
 
+
+
+
+
+
 type Link struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
 }
 
 func (am *AnimeScraper) getAniDBID(links []Link) (int, error) {
-    anidbPattern := regexp.MustCompile(`[&?]aid=(\d+)`)
+	anidbPattern := regexp.MustCompile(`[&?]aid=(\d+)`)
 	for _, link := range links {
 		if strings.Contains(strings.ToLower(link.Name), "anidb") {
 			matches := anidbPattern.FindStringSubmatch(link.URL)

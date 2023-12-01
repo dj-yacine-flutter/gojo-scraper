@@ -8,138 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bregydoc/gtranslate"
 	jikan "github.com/darenliang/jikan-go"
 	"github.com/dj-yacine-flutter/gojo-scraper/models"
 	"github.com/dj-yacine-flutter/gojo-scraper/tvdb"
 	"github.com/dj-yacine-flutter/gojo-scraper/utils"
 )
-
-func (server *AnimeScraper) getTMDBRating(TMDbID int, AgeRating *string) {
-	results, err := server.TMDB.GetMovieReleaseDates(TMDbID)
-	if err != nil {
-		return
-	}
-	if results != nil {
-		for _, r := range results.Results {
-			if strings.Contains(strings.ToLower(r.Iso3166_1), "us") {
-				for _, t := range r.ReleaseDates {
-					if t.Certification != "" {
-						*AgeRating, err = utils.CleanRating(t.Certification)
-						if err != nil {
-							*AgeRating = ""
-							continue
-						}
-						break
-					}
-				}
-			}
-		}
-	}
-}
-
-func (server *AnimeScraper) getTMDBPic(posterPath, backdropPath string, PortriatBlurHash, PortriatPoster, LandscapeBlurHash, LandscapePoster *string) {
-	var err error
-	if posterPath != "" {
-		*PortriatBlurHash, err = utils.GetBlurHash(server.DecodeIMG, posterPath)
-		if err != nil {
-			*PortriatBlurHash = ""
-			*PortriatPoster = ""
-		}
-		*PortriatPoster = server.OriginalIMG + posterPath
-	}
-
-	if backdropPath != "" {
-		*LandscapeBlurHash, err = utils.GetBlurHash(server.DecodeIMG, backdropPath)
-		if err != nil {
-			*LandscapeBlurHash = ""
-			*LandscapePoster = ""
-		}
-		*LandscapePoster = server.OriginalIMG + backdropPath
-	}
-}
-
-func (server *AnimeScraper) getMalPic(Pic, JPG, WEBP string, PortriatBlurHash, PortriatPoster, LandscapeBlurHash, LandscapePoster *string) {
-	var err error
-	img := ""
-	if JPG != "" {
-		img = JPG
-	} else if WEBP != "" {
-		img = WEBP
-	} else {
-		img = fmt.Sprint("https://cdn-eu.anidb.net/images/main/" + Pic)
-	}
-	*PortriatBlurHash, err = utils.GetBlurHash(img, "")
-	if err != nil {
-		*PortriatBlurHash = ""
-	}
-
-	*PortriatPoster = img
-	*LandscapeBlurHash, err = utils.GetBlurHash(img, "")
-	if err != nil {
-		*LandscapeBlurHash = ""
-	}
-	*LandscapeBlurHash = ""
-}
-
-func (server *AnimeScraper) getAniDBIDFromTitles(malData *jikan.AnimeById) (int, error) {
-	for _, v := range GlobalAniDBTitles.Animes {
-		for _, title := range v.Titles {
-			titles := append(malData.Data.TitleSynonyms, malData.Data.Title, malData.Data.TitleEnglish)
-			for _, mt := range titles {
-				titleMatches := strings.Contains(strings.ToLower(title.Value), strings.ToLower(mt))
-				if titleMatches {
-					//server.LOG.Info().Msgf("AniDB title : %s || Mal title : %s\n", title.Value, malData.Data.TitleEnglish)
-					aniDBData, err := server.GetAniDBData(v.Aid)
-					if err != nil {
-						return 0, err
-					}
-					typeM := strings.Contains(strings.ToLower(aniDBData.Type), strings.ToLower(malData.Data.Type))
-					//server.LOG.Info().Msgf("AniDB type : %s || Mal type : %s\n", aniDBData.Type, malData.Data.Type)
-					aniY, err := utils.ExtractYear(aniDBData.Startdate)
-					if err != nil {
-						return 0, err
-					}
-					//server.LOG.Info().Msgf("AniDB year : %d || Mal year : %d\n", aniY, malData.Data.Aired.From.Year())
-					yearM := malData.Data.Aired.From.Year() == aniY
-					if typeM && yearM {
-						return v.Aid, nil
-					}
-				}
-			}
-		}
-	}
-	return 0, nil
-}
-
-func (server *AnimeScraper) searchAniDBID(malData *jikan.AnimeById, links []Link) (int, error) {
-	anidbID, err := server.getAniDBID(links)
-	if err != nil {
-		anidbID, err = server.getAniDBIDFromTitles(malData)
-		if err != nil {
-			return 0, err
-		}
-	}
-	if anidbID == 0 {
-		return 0, fmt.Errorf("there is no AniDB ID for this anime")
-	}
-	return anidbID, nil
-}
-
-func (server *AnimeScraper) getResourceByIDs(anidbID, malID int) (AnimeResources, error) {
-	for _, d := range GlobalAnimeResources {
-		if anidbID == d.AnidbID {
-			if d.Data.MalID != 0 && malID != 0 {
-				if d.Data.MalID == malID {
-					return d, nil
-				}
-			} else {
-				return d, nil
-			}
-		}
-	}
-	return AnimeResources{}, fmt.Errorf("no resource found for this anime")
-}
 
 func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request) {
 	mal := r.URL.Query().Get("mal")
@@ -228,7 +101,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		IMDbID = animeResources.Data.IMDbID
 	}
 
-	server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.SmallImageUrl, malData.Data.Images.Webp.SmallImageUrl, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
+	server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.LargeImageUrl, malData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster)
 
 	if malData.Data.TitleJapanese != "" {
 		OriginalTitle = malData.Data.TitleJapanese
@@ -951,7 +824,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	}
 
 	if TMDbID == 0 && (LandscapePoster == "" || PortriatPoster == "" || PortriatBlurHash == "" || LandscapeBlurHash == "") {
-		server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.LargeImageUrl, malData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
+		server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.LargeImageUrl, malData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster)
 	}
 
 	if len(malData.Data.Genres) > 0 {
@@ -1146,7 +1019,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	NotifyMoeID := server.NotifyMoe(utils.CleanResText(animeResources.Data.NotifyMoeID), malData.Data.Title, Aired)
 	AnilistID := server.Anylist(malData.Data.MalId)
 
-	animeData := models.Anime{
+	animeData := models.AnimeMovie{
 		OriginalTitle:       OriginalTitle,
 		Aired:               Aired.Format(time.DateOnly),
 		Runtime:             Runtime,
@@ -1159,13 +1032,13 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Genres:              utils.CleanStringArray(Genres),
 		Studios:             utils.CleanDuplicates(utils.CleanStringArray(Studios)),
 		Tags:                utils.CleanStringArray(Tags),
-		ProductionCompanies: PsCs,
+		ProductionCompanies: utils.CleanDuplicates(PsCs),
 		Titles:              Titles,
 		Backdrops:           Backdrops,
 		Posters:             Posters,
 		Logos:               Logos,
 		Trailers:            utils.CleanTrailers(Trailers),
-		AnimeResources: models.AnimeResources{
+		AnimeResources: models.MovieAnimeResources{
 			LivechartID:   LivechartID,
 			AnimePlanetID: utils.CleanResText(AnimePlanetID),
 			AnisearchID:   AnysearchID,
@@ -1174,9 +1047,9 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 			MalID:         MalID,
 			NotifyMoeID:   NotifyMoeID,
 			AnilistID:     AnilistID,
-			ThetvdbID:     TVDbID,
-			ImdbID:        utils.CleanResText(IMDbID),
-			ThemoviedbID:  TMDbID,
+			TVDbID:        TVDbID,
+			IMDbID:        utils.CleanResText(IMDbID),
+			TMDbID:        TMDbID,
 			Type:          utils.CleanResText(animeResources.Data.Type),
 		},
 	}
@@ -1194,7 +1067,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	server.LOG.Info().Msgf("LandscapePoster: %s", LandscapePoster)
 	server.LOG.Info().Msgf("LandscapeBlurHash: %s", LandscapeBlurHash)
 
-	if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
+	/* if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
 		translation, err := gtranslate.TranslateWithParams(
 			utils.CleanOverview(malData.Data.Synopsis),
 			gtranslate.TranslationParams{
@@ -1251,7 +1124,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				},
 			}
 		}
-	}
+	} */
 
 	response, err := json.Marshal(animeData)
 	if err != nil {

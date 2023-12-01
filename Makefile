@@ -1,4 +1,5 @@
 run:
+	rm -rf gojo-scraper
 	clear
 	go run .
 
