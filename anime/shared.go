@@ -130,62 +130,77 @@ func (server *AnimeScraper) getResourceByIDs(anidbID, malID int) (AnimeResources
 	return AnimeResources{}, fmt.Errorf("no resource found for this anime")
 }
 
-func (server *AnimeScraper) getMALOriginalID(malID int) int {
-	id := -1
+func (server *AnimeScraper) getMALOriginalID(id int) int {
+	if id <= 0 {
+		return 0
+	}
+
+	var old int
+
 	for {
-		time.Sleep(500 * time.Millisecond)
-		if id != malID {
-			if id == -1 {
-				id = malID
-			}
-			server.LOG.Info().Msgf("Mal try: %d", id)
+		if old == id {
+			return id
+		}
 
-			data, err := jikan.GetAnimeRelations(id)
-			if err != nil {
-				server.LOG.Error().Msgf("Mal try Error: %v", err.Error())
-				continue
-			}
-			//gg, _ := json.Marshal(&data)
-			//server.LOG.Info().Msg(string(gg))
-			if len(data.Data) > 0 {
-				var p bool
-				for _, e := range data.Data {
-					if strings.Contains(strings.ToLower(e.Relation), "prequel") {
-						for _, q := range e.Entry {
-							if strings.Contains(strings.ToLower(q.Type), "anime") {
-								id = q.MalId
-								p = true
-								continue
-							}
-						}
-						if p {
-							continue
-						}
-					}
-				}
+		time.Sleep(1000 * time.Millisecond)
+		anime, err := jikan.GetAnimeById(id)
+		if err != nil {
+			server.LOG.Error().Msgf("Mal try Error: %v", err.Error())
+			continue
+		}
 
-				if p {
+		server.LOG.Info().Msgf("Mal try: %d", id)
+
+		if anime != nil {
+			if strings.Contains(strings.ToLower(anime.Data.Type), "tv") {
+
+				time.Sleep(700 * time.Millisecond)
+				data, err := jikan.GetAnimeRelations(id)
+				if err != nil {
+					server.LOG.Error().Msgf("Mal try Relation Error: %v", err.Error())
 					continue
 				}
 
-				for _, e := range data.Data {
-					if strings.Contains(strings.ToLower(e.Relation), "sequel") {
-						for _, q := range e.Entry {
-							if strings.Contains(strings.ToLower(q.Type), "anime") {
-								return id
+				old = id
+
+				if data != nil {
+					var f bool
+					for _, e := range data.Data {
+						if strings.Contains(strings.ToLower(e.Relation), "prequel") {
+							f = true
+							for _, q := range e.Entry {
+								if strings.Contains(strings.ToLower(q.Type), "anime") {
+									time.Sleep(700 * time.Millisecond)
+
+									anime, _ = jikan.GetAnimeById(q.MalId)
+									if anime != nil {
+										if strings.Contains(strings.ToLower(anime.Data.Type), "tv") {
+											id = q.MalId
+											break
+										}
+									}
+								}
+							}
+							break
+						}
+					}
+
+					server.LOG.Info().Msgf("Mal found: %d", id)
+
+					if !f {
+						for _, e := range data.Data {
+							if strings.Contains(strings.ToLower(e.Relation), "sequel") {
+								for _, q := range e.Entry {
+									if strings.Contains(strings.ToLower(q.Type), "anime") {
+										return id
+									}
+								}
+								break
 							}
 						}
 					}
 				}
-
-				return malID
-			} else {
-				break
 			}
-		} else {
-			break
 		}
 	}
-
-	return 0
 }
