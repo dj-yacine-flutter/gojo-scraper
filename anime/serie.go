@@ -26,6 +26,7 @@ type SQuery struct {
 	seasonNumber    int
 	papaSerieID     int
 	papaSerieTVDbID int
+	papaSerieTMDbID int
 	papaSerieName   string
 	papaSerieAired  time.Time
 }
@@ -53,7 +54,6 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		AnimePlanetID     string
 		OriginalTitle     string
 		Aired             time.Time
-		Runtime           string
 		Genres            []string
 		Studios           []string
 		Tags              []string
@@ -136,9 +136,9 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 	var getIt bool
 
-	animeResources := AnimeResources{}
-	AniDBData := AniDB{}
-	MyAnimeListData := &jikan.AnimeById{}
+	var animeResources = AnimeResources{}
+	var AniDBData = AniDB{}
+	var MyAnimeListData = &jikan.AnimeById{}
 
 	for _, sq := range SerieQueries {
 		time.Sleep(500 * time.Millisecond)
@@ -148,7 +148,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			continue
 		}
 
-		if !strings.Contains(strings.ToLower(qmalData.Data.Type), "tv") {
+		if !strings.Contains(strings.ToLower(myanimelistData.Data.Type), "tv") {
 			continue
 		}
 
@@ -192,7 +192,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			if err != nil {
 				continue
 			}
-			if qmalData.Data.Aired.From.Year() == stratDate.Year() && qmalData.Data.Aired.From.Month() == stratDate.Month() {
+			if qmalData.Data.Aired.From.Year() == stratDate.Year() {
 				aired = true
 			}
 		}
@@ -265,11 +265,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 	if Query.TVDbID == 0 {
 
-		var seasonID int
-		var seasonNumber int
-
 		if Query.papaSerieID != 0 {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(700 * time.Millisecond)
 
 			mld, err := jikan.GetAnimeById(Query.papaSerieID)
 			if err != nil {
@@ -288,11 +285,6 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 						if len(query.Data) > 0 {
 							for _, d := range query.Data {
 								if strings.Contains(strings.ToLower(d.Type), "serie") {
-
-									// qq, _ := json.Marshal(d)
-									// // fmt.Printf("\n\n")
-									// fmt.Println(string(qq))
-									// fmt.Printf("\n\n")
 
 									id, err := strconv.Atoi(d.TvdbID)
 									if err != nil {
@@ -353,7 +345,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			if err == nil && serie != nil {
 				if serie.Data.FirstAired != "" {
 
-					server.LOG.Info().Msgf("TVDB: %v", serie.Data.FirstAired)
+					server.LOG.Info().Msgf("(1) TVDB AirDate: %v", serie.Data.FirstAired)
 
 					aired, err := time.Parse(time.DateOnly, serie.Data.FirstAired)
 					if err == nil {
@@ -361,6 +353,9 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 							if len(serie.Data.Seasons) > 0 {
 								for _, s := range serie.Data.Seasons {
 									if strings.Contains(strings.ToLower(s.Type.Type), "official") && s.Number != 0 {
+
+										server.LOG.Info().Msgf("(1) TVDB Season Name: %v", s.Name)
+										server.LOG.Info().Msgf("(1) TVDB Season Year: %v", s.Year)
 
 										season, err := server.TVDB.GetSeasonsByIDExtended(s.ID)
 										if err != nil {
@@ -377,8 +372,10 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 											if Query.papaSerieTVDbID == 0 {
 												Query.papaSerieTVDbID = season.Data.SeriesID
 											}
-											seasonID = season.Data.ID
-											seasonNumber = season.Data.Number
+											Query.TVDbID = season.Data.ID
+											Query.seasonNumber = season.Data.Number
+
+											
 
 											if len(season.Data.Artwork) > 0 {
 												for _, d := range season.Data.Artwork {
@@ -407,7 +404,6 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 													}
 												}
 											}
-
 											break
 										}
 										//gg, err := json.Marshal(&season)
@@ -459,8 +455,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 												Query.papaSerieName = serie.Data.Name
 											}
 
-											seasonID = season.Data.ID
-											seasonNumber = season.Data.Number
+											Query.TVDbID = season.Data.ID
+											Query.seasonNumber = season.Data.Number
 
 											if len(season.Data.Artwork) > 0 {
 												for _, d := range season.Data.Artwork {
@@ -513,8 +509,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 															Query.papaSerieName = serie.Data.Name
 														}
 
-														seasonID = season.Data.ID
-														seasonNumber = season.Data.Number
+														Query.TVDbID = season.Data.ID
+														Query.seasonNumber = season.Data.Number
 
 														if len(season.Data.Artwork) > 0 {
 															for _, d := range season.Data.Artwork {
@@ -545,7 +541,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 														}
 														break
 													}
-													if seasonID != 0 {
+													if Query.TVDbID != 0 {
 														break
 													}
 												}
@@ -568,8 +564,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 												Query.papaSerieName = serie.Data.Name
 											}
 
-											seasonID = season.Data.ID
-											seasonNumber = season.Data.Number
+											Query.TVDbID = season.Data.ID
+											Query.seasonNumber = season.Data.Number
 
 											if len(season.Data.Artwork) > 0 {
 												for _, d := range season.Data.Artwork {
@@ -609,7 +605,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			}
 		}
 
-		if seasonID == 0 {
+		if Query.TVDbID == 0 {
 			var AlternativeQuries []SQuery
 			for _, sq := range SerieQueries {
 
@@ -672,8 +668,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 															if Query.papaSerieTVDbID == 0 {
 																Query.papaSerieTVDbID = season.Data.SeriesID
 															}
-															seasonID = season.Data.ID
-															seasonNumber = season.Data.Number
+															Query.TVDbID = season.Data.ID
+															Query.seasonNumber = season.Data.Number
 
 															if len(season.Data.Artwork) > 0 {
 																for _, d := range season.Data.Artwork {
@@ -726,8 +722,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 																			Query.papaSerieName = serie.Data.Name
 																		}
 
-																		seasonID = season.Data.ID
-																		seasonNumber = season.Data.Number
+																		Query.TVDbID = season.Data.ID
+																		Query.seasonNumber = season.Data.Number
 
 																		if len(season.Data.Artwork) > 0 {
 																			for _, d := range season.Data.Artwork {
@@ -758,7 +754,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 																		}
 																		break
 																	}
-																	if seasonID != 0 {
+																	if Query.TVDbID != 0 {
 																		break
 																	}
 																}
@@ -785,8 +781,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 															if Query.papaSerieTVDbID == 0 {
 																Query.papaSerieTVDbID = season.Data.SeriesID
 															}
-															seasonID = season.Data.ID
-															seasonNumber = season.Data.Number
+															Query.TVDbID = season.Data.ID
+															Query.seasonNumber = season.Data.Number
 
 															if len(season.Data.Artwork) > 0 {
 																for _, d := range season.Data.Artwork {
@@ -828,7 +824,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 						}
 					}
 				}
-				if seasonID != 0 {
+				if Query.TVDbID != 0 {
 					break
 				}
 
@@ -839,7 +835,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 					})
 				}
 			}
-			if seasonID == 0 {
+			if Query.TVDbID == 0 {
 				for _, sq := range AlternativeQuries {
 
 					server.LOG.Info().Msgf("(3)  TVDB Title: %s", sq.Title)
@@ -901,8 +897,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 																if Query.papaSerieTVDbID == 0 {
 																	Query.papaSerieTVDbID = season.Data.SeriesID
 																}
-																seasonID = season.Data.ID
-																seasonNumber = season.Data.Number
+																Query.TVDbID = season.Data.ID
+																Query.seasonNumber = season.Data.Number
 
 																if len(season.Data.Artwork) > 0 {
 																	for _, d := range season.Data.Artwork {
@@ -955,8 +951,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 																				Query.papaSerieName = serie.Data.Name
 																			}
 
-																			seasonID = season.Data.ID
-																			seasonNumber = season.Data.Number
+																			Query.TVDbID = season.Data.ID
+																			Query.seasonNumber = season.Data.Number
 
 																			if len(season.Data.Artwork) > 0 {
 																				for _, d := range season.Data.Artwork {
@@ -987,7 +983,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 																			}
 																			break
 																		}
-																		if seasonID != 0 {
+																		if Query.seasonNumber != 0 {
 																			break
 																		}
 																	}
@@ -1013,8 +1009,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 																if Query.papaSerieTVDbID == 0 {
 																	Query.papaSerieTVDbID = season.Data.SeriesID
 																}
-																seasonID = season.Data.ID
-																seasonNumber = season.Data.Number
+																Query.TVDbID = season.Data.ID
+																Query.seasonNumber = season.Data.Number
 
 																if len(season.Data.Artwork) > 0 {
 																	for _, d := range season.Data.Artwork {
@@ -1057,56 +1053,158 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 						}
 					}
 
-					if seasonID != 0 {
+					if Query.TVDbID != 0 {
 						break
 					}
 				}
 			}
 		}
-
-		Query.TVDbID = seasonID
-		Query.seasonNumber = seasonNumber
 	}
 
-	/* 	if Query.TMDbID == 0 {
-		var seriaID int
-		var seasonID int
+	var tmdbTime time.Time
+	if Query.TMDbID == 0 {
 
-		var TMDBIDs []int
-		for _, r := range AniDBData.Resources.Resource {
-			if strings.Contains(r.Type, "44") {
-				if len(r.Externalentity) > 0 {
-					for _, f := range r.Externalentity {
-						for _, v := range f.Identifier {
-							id, err := strconv.Atoi(v)
+		if Query.papaSerieTVDbID != 0 {
+			serie, err := server.TMDB.GetFindByID(fmt.Sprint(Query.papaSerieTVDbID), map[string]string{"external_source": "tvdb_id"})
+			if err != nil {
+				server.LOG.Error().Msgf("error when find serie in tmdb: %v", err.Error())
+				http.Error(w, "error when find serie in tmdb", http.StatusInternalServerError)
+			}
+
+			if serie != nil {
+				if len(serie.TvResults) > 0 {
+					for _, s := range serie.TvResults {
+						server.LOG.Info().Msgf("Papa Serie TMDB Name: %v", s.Name)
+						server.LOG.Info().Msgf("Papa Serie TMDB First AirDate: %v", s.FirstAirDate)
+
+						fair, err := time.Parse(time.DateOnly, s.FirstAirDate)
+						if err != nil {
+							server.LOG.Error().Msgf("error when get airDate serie in tmdb: %v", err.Error())
+							http.Error(w, "error when get airDate serie in tmdb", http.StatusInternalServerError)
+						}
+
+						if Query.papaSerieAired.Year() == fair.Year() {
+							Query.papaSerieTMDbID = int(s.ID)
+							break
+						}
+					}
+				}
+			}
+
+			if Query.papaSerieTMDbID != 0 {
+				data, err := server.TMDB.GetTVDetails(Query.papaSerieTMDbID, nil)
+				if err != nil {
+					server.LOG.Error().Msgf("error when get serie seasons in tmdb: %v", err.Error())
+					http.Error(w, "error when get serie seasons in tmdb", http.StatusInternalServerError)
+				}
+
+				if data != nil {
+					for _, s := range data.Seasons {
+						if s.SeasonNumber != 0 {
+							server.LOG.Info().Msgf("Papa Serie Season TMDB Name: %v", s.Name)
+							server.LOG.Info().Msgf("Papa Serie Season TMDB First AirDate: %v", s.AirDate)
+
+							air, err := time.Parse(time.DateOnly, s.AirDate)
 							if err != nil {
-								continue
+								server.LOG.Error().Msgf("error when get airDate serie season in tmdb: %v", err.Error())
+								http.Error(w, "error when get airDate serie season in tmdb", http.StatusInternalServerError)
 							}
-							TMDBIDs = append(TMDBIDs, id)
+
+							if Query.Aired.Year() == air.Year() {
+								tmdbTime = air
+								Query.TMDbID = int(s.ID)
+								break
+							}
+
 						}
 					}
 				}
 			}
 		}
 
-		if animeResources.Data.TMDdID != nil {
-			tt, err := animeResources.Data.TMDdID.MarshalJSON()
-			if err == nil {
-				for _, d := range strings.Split(string(tt), ",") {
-					ti, err := strconv.Atoi(d)
-					if err == nil {
-						if ti != 0 {
-							TMDBIDs = append(TMDBIDs, int(ti))
+		if Query.TVDbID != 0 && Query.papaSerieTMDbID == 0 {
+			season, err := server.TMDB.GetFindByID(fmt.Sprint(Query.TVDbID), map[string]string{"external_source": "tvdb_id"})
+			if err != nil {
+				server.LOG.Error().Msgf("error when find serie in tmdb: %v", err.Error())
+				http.Error(w, "error when find serie in tmdb", http.StatusInternalServerError)
+			}
+
+			if season != nil {
+				if len(season.TvSeasonResults) > 0 {
+					for _, s := range season.TvSeasonResults {
+						if s.SeasonNumber != 0 {
+							server.LOG.Info().Msgf("Papa Season TMDB Name: %v", s.Name)
+							server.LOG.Info().Msgf("Papa Season TMDB First AirDate: %v", s.AirDate)
+
+							air, err := time.Parse(time.DateOnly, s.AirDate)
+							if err != nil {
+								server.LOG.Error().Msgf("error when get airDate season in tmdb: %v", err.Error())
+								http.Error(w, "error when get airDate season in tmdb", http.StatusInternalServerError)
+							}
+
+							if Query.Aired.Year() == air.Year() {
+								tmdbTime = air
+								Query.TMDbID = int(s.ID)
+								Query.papaSerieTMDbID = int(s.ShowID)
+								break
+							}
+
 						}
 					}
 				}
 			}
 		}
 
-	} */
+		if Query.TMDbID == 0 {
+			querys, _ := server.TMDB.GetSearchTVShow(MyAnimeListData.Data.TitleEnglish, map[string]string{"first_air_date_year": fmt.Sprint(MyAnimeListData.Data.Aired.From.Year())})
+			if querys != nil {
+				for _, q := range querys.Results {
 
-	/*
-		var queries []string
+					fair, err := time.Parse(time.DateOnly, q.FirstAirDate)
+					if err != nil {
+						server.LOG.Error().Msgf("error in airdate when search serie in tmdb: %v", err.Error())
+						continue
+					}
+
+					if fair.Year() == MyAnimeListData.Data.Aired.From.Year() && fair.Month() == MyAnimeListData.Data.Aired.From.Month() {
+						data, err := server.TMDB.GetTVDetails(int(q.ID), nil)
+						if err != nil {
+							server.LOG.Error().Msgf("error in get when search serie in tmdb: %v", err.Error())
+							http.Error(w, "error in get when search serie in tmdb", http.StatusInternalServerError)
+						}
+
+						if data != nil {
+							for _, s := range data.Seasons {
+								if s.SeasonNumber != 0 {
+									server.LOG.Info().Msgf("Papa search serie TMDB Name: %v", s.Name)
+									server.LOG.Info().Msgf("Papa search serie TMDB First AirDate: %v", s.AirDate)
+
+									air, err := time.Parse(time.DateOnly, s.AirDate)
+									if err != nil {
+										server.LOG.Error().Msgf("error when get airDate search serie in tmdb: %v", err.Error())
+										http.Error(w, "error when get airDate search serie in tmdb", http.StatusInternalServerError)
+									}
+
+									if Query.Aired.Year() == air.Year() {
+										tmdbTime = air
+										Query.TMDbID = int(s.ID)
+										Query.papaSerieTMDbID = int(q.ID)
+										Query.papaSerieAired = fair
+										break
+									}
+
+								}
+							}
+						}
+					}
+				}
+
+			}
+		}
+
+	}
+
+	/*	var queries []string
 		var totalSearch tvdb.Search
 		queries = append(queries, MyAnimeListData.Data.TitleEnglish, MyAnimeListData.Data.Title)
 		queries = append(queries, MyAnimeListData.Data.TitleSynonyms...)
@@ -1704,6 +1802,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			server.getMalPic(AniDBData.Picture, MyAnimeListData.Data.Images.Jpg.LargeImageUrl, MyAnimeListData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
 		}
 	*/
+
 	if len(MyAnimeListData.Data.Genres) > 0 {
 		for _, g := range MyAnimeListData.Data.Genres {
 			Genres = append(Genres, g.Name)
@@ -1745,115 +1844,6 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		AnimePlanetID = strings.ReplaceAll(AnimePlanetID, "\"", "")
 	}
 
-	if AniDBData.Startdate != "" {
-		stratDate, err := time.Parse(time.DateOnly, AniDBData.Startdate)
-		if err == nil {
-			if AniDBData.Enddate != "" {
-				if MyAnimeListData.Data.Aired.From.Year() == stratDate.Year() && MyAnimeListData.Data.Aired.From.Month() == stratDate.Month() {
-					Aired = stratDate
-				}
-				endDate, err := time.Parse(time.DateOnly, AniDBData.Enddate)
-				if err == nil {
-					if MyAnimeListData.Data.Aired.From.Year() == endDate.Year() && MyAnimeListData.Data.Aired.From.Month() == endDate.Month() {
-						Aired = endDate
-					}
-				}
-			} else {
-				Aired = MyAnimeListData.Data.Aired.From
-			}
-		}
-	} else {
-		Aired = MyAnimeListData.Data.Aired.From
-	}
-
-	if MyAnimeListData.Data.Year != 0 {
-		ReleaseYear = MyAnimeListData.Data.Year
-	} else {
-		ReleaseYear, err = utils.ExtractYear(Aired.Format(time.DateOnly))
-		if err != nil {
-			ReleaseYear = 0
-		}
-	}
-
-	if Runtime == "" {
-		var titles []string
-		titles = append(titles, "TMDBTitle", MyAnimeListData.Data.Title, MyAnimeListData.Data.TitleEnglish, MyAnimeListData.Data.TitleJapanese)
-		if len(AniDBData.Episodes.Episode) > 0 {
-			var h int
-			for _, e := range AniDBData.Episodes.Episode {
-				if e.Epno.Text != "" {
-					if strings.Contains(e.Epno.Type, "1") {
-						if len(e.Title) > 0 {
-							for _, u := range e.Title {
-								for _, t := range titles {
-									if strings.Contains(utils.CleanTitle(t), utils.CleanTitle(u.Text)) {
-										if e.Length != "" {
-											b, err := strconv.Atoi(e.Length)
-											if err != nil {
-												continue
-											}
-											if h < int(b) && b != 0 {
-												h = int(b)
-											}
-											break
-										}
-									} else {
-										airdate, err := time.Parse(time.DateOnly, e.Airdate)
-										if err == nil {
-											if MyAnimeListData.Data.Aired.From.Year() == airdate.Year() && MyAnimeListData.Data.Aired.From.Month() == airdate.Month() {
-												if e.Length != "" {
-													b, err := strconv.Atoi(e.Length)
-													if err != nil {
-														continue
-													}
-													if h < int(b) && b != 0 {
-														h = int(b)
-													}
-													break
-												}
-											}
-										}
-									}
-								}
-								if h != 0 {
-									break
-								}
-							}
-						}
-
-					}
-				}
-			}
-			if h != 0 {
-				Runtime = utils.CleanRuntime(fmt.Sprintf("%dm", h))
-			} else {
-				run, err := time.ParseDuration(utils.CleanRuntime("TMDBRuntime"))
-				if err != nil {
-					run, err = time.ParseDuration(utils.CleanRuntime(MyAnimeListData.Data.Duration))
-					if err != nil {
-						Runtime = ""
-					} else {
-						Runtime = fmt.Sprintf("%fm", run.Minutes())
-					}
-				} else {
-					Runtime = fmt.Sprintf("%fm", run.Minutes())
-				}
-			}
-		} else {
-			run, err := time.ParseDuration(utils.CleanRuntime(MyAnimeListData.Data.Duration))
-			if err != nil {
-				run, err = time.ParseDuration(utils.CleanRuntime("TMDBRuntime"))
-				if err != nil {
-					Runtime = ""
-				} else {
-					Runtime = fmt.Sprintf("%fm", run.Minutes())
-				}
-			} else {
-				Runtime = fmt.Sprintf("%fm", run.Minutes())
-			}
-		}
-	}
-
 	for _, s := range utils.CleanDuplicates(utils.CleanStringArray(Studios)) {
 		for _, r := range utils.CleanDuplicates(utils.CleanStringArray(Licensors)) {
 			if !strings.Contains(utils.CleanTitle(r), utils.CleanTitle(s)) {
@@ -1889,6 +1879,17 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
+	Aired = utils.CleanDates([]string{MyAnimeListData.Data.Aired.From.Format(time.DateOnly), tmdbTime.Format(time.DateTime), AniDBData.Startdate})
+
+	if Aired.IsZero() {
+		Aired = MyAnimeListData.Data.Aired.From
+	}
+	if MyAnimeListData.Data.Year != 0 {
+		ReleaseYear = MyAnimeListData.Data.Year
+	} else {
+		ReleaseYear = Aired.Year()
+	}
+
 	LivechartID := server.Livechart(animeResources.Data.LivechartID, OriginalTitle, Aired)
 	AnysearchID := server.Anysearch(animeResources.Data.AnisearchID, MyAnimeListData.Data.TitleEnglish, OriginalTitle, Aired)
 	KitsuID := server.Kitsu(animeResources.Data.KitsuID, OriginalTitle, Aired)
@@ -1899,12 +1900,11 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		SerieMalID:  Query.papaSerieID,
 		SerieName:   Query.papaSerieName,
 		SerieTVDbID: Query.papaSerieTVDbID,
-		SerieTMDbID: Query.TMDbID,
-		Aired:       utils.CleanResText(Query.papaSerieAired.String()),
+		SerieTMDbID: Query.papaSerieTMDbID,
+		Aired:       utils.CleanResText(Query.papaSerieAired.Format(time.DateOnly)),
 		Season: models.Season{
 			OriginalTitle:       OriginalTitle,
 			Aired:               Aired.Format(time.DateOnly),
-			Runtime:             Runtime,
 			ReleaseYear:         ReleaseYear,
 			Rating:              AgeRating,
 			PortriatPoster:      PortriatPoster,
@@ -1930,23 +1930,11 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 				NotifyMoeID:   NotifyMoeID,
 				AnilistID:     AnilistID,
 				SeasonTVDbID:  Query.TVDbID,
+				SeasonTMDbID:  Query.TMDbID,
 				Type:          utils.CleanResText(animeResources.Data.Type),
 			},
 		},
 	}
-
-	//server.LOG.Info().Msgf("Licensors: %v", Licensors)
-	//server.LOG.Info().Msgf("TMDBID: %d", TMDbID)
-	//server.LOG.Info().Msgf("TVDBID: %d", TVDbID)
-	//server.LOG.Info().Msgf("Aired: %v", Aired)
-	//server.LOG.Info().Msgf("Runtime: %s", Runtime)
-	//server.LOG.Info().Msgf("AniDB Episodes: %d", len(AniDBData.Episodes.Episode))
-	//server.LOG.Info().Msgf("OriginalTitle: %s", OriginalTitle)
-	//server.LOG.Info().Msgf("ReleaseYear: %d", ReleaseYear)
-	//server.LOG.Info().Msgf("PortriatPoster: %s", PortriatPoster)
-	//server.LOG.Info().Msgf("PortriatBlurHash: %s", PortriatBlurHash)
-	//server.LOG.Info().Msgf("LandscapePoster: %s", LandscapePoster)
-	//server.LOG.Info().Msgf("LandscapeBlurHash: %s", LandscapeBlurHash)
 
 	/* if MyAnimeListData.Data.TitleEnglish != "" && MyAnimeListData.Data.Synopsis != "" {
 		translation, err := gtranslate.TranslateWithParams(

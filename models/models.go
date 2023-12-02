@@ -88,6 +88,7 @@ type SerieAnimeResources struct {
 	NotifyMoeID   string `json:"notifyMoeID"`
 	AnilistID     int    `json:"anilistID"`
 	SeasonTVDbID  int    `json:"seasonTVDBID"`
+	SeasonTMDbID  int    `json:"seasonTMDBID"`
 	Type          string `json:"type"`
 }
 
@@ -96,7 +97,6 @@ type Season struct {
 	Aired               string              `json:"aired"`
 	ReleaseYear         int                 `json:"releaseYear"`
 	Rating              string              `json:"rating"`
-	Runtime             string              `json:"runtime"`
 	PortriatPoster      string              `json:"portriatPoster"`
 	PortriatBlurHash    string              `json:"portriatBlurHash"`
 	LandscapePoster     string              `json:"landscapePoster"`
