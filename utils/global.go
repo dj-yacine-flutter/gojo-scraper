@@ -5,9 +5,51 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dj-yacine-flutter/gojo-scraper/models"
 )
+
+func CleanDates(dates []string) time.Time {
+	dateMap := make(map[string]bool)
+	var firstDateWithSameYear time.Time
+  
+	firstDateWithSameYear, err := time.Parse(time.DateOnly, dates[0])
+	if err != nil {
+	  return time.Time{}
+	}
+  
+	for _, dateStr := range dates {
+	  date, err := time.Parse(time.DateOnly, dateStr)
+	  if err != nil {
+		continue
+	  }
+  
+	  yearMonth := fmt.Sprintf("%d-%02d", date.Year(), date.Month())
+  
+	  if dateMap[yearMonth] {
+		return date
+	  }
+  
+	  dateMap[yearMonth] = true
+	  dateMap[fmt.Sprint(date.Year())] = true
+	}
+  
+	hasDuplicateDates := false
+	for _, v := range dateMap {
+	  if v {
+		hasDuplicateDates = true
+		break
+	  }
+	}
+  
+	if !hasDuplicateDates {
+	  return firstDateWithSameYear
+	}
+  
+	return time.Time{}
+  }
+  
 
 func ExtractYTKey(url string) string {
 	ytPatterns := []*regexp.Regexp{

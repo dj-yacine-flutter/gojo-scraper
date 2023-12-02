@@ -868,34 +868,15 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		AnimePlanetID = strings.ReplaceAll(AnimePlanetID, "\"", "")
 	}
 
-	if AniDBData.Startdate != "" {
-		stratDate, err := time.Parse(time.DateOnly, AniDBData.Startdate)
-		if err == nil {
-			if AniDBData.Enddate != "" {
-				if malData.Data.Aired.From.Year() == stratDate.Year() && malData.Data.Aired.From.Month() == stratDate.Month() {
-					Aired = stratDate
-				}
-				endDate, err := time.Parse(time.DateOnly, AniDBData.Enddate)
-				if err == nil {
-					if malData.Data.Aired.From.Year() == endDate.Year() && malData.Data.Aired.From.Month() == endDate.Month() {
-						Aired = endDate
-					}
-				}
-			} else {
-				Aired = malData.Data.Aired.From
-			}
-		}
-	} else {
+	Aired = utils.CleanDates([]string{malData.Data.Aired.From.Format(time.DateOnly), AniDBData.Startdate, AniDBData.Enddate})
+	if Aired.IsZero() {
 		Aired = malData.Data.Aired.From
 	}
 
 	if malData.Data.Year != 0 {
 		ReleaseYear = malData.Data.Year
 	} else {
-		ReleaseYear, err = utils.ExtractYear(Aired.Format(time.DateOnly))
-		if err != nil {
-			ReleaseYear = 0
-		}
+		ReleaseYear = Aired.Year()
 	}
 
 	if Runtime == "" {
