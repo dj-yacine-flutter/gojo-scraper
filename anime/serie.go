@@ -45,25 +45,29 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 	}
 
 	var (
-		ReleaseYear       int
-		AgeRating         string
-		PortriatPoster    string
-		PortriatBlurHash  string
-		LandscapePoster   string
-		LandscapeBlurHash string
-		AnimePlanetID     string
-		OriginalTitle     string
-		Aired             time.Time
-		Genres            []string
-		Studios           []string
-		Tags              []string
-		PsCs              []string
-		Titles            models.Titles
-		Posters           []models.Image
-		Backdrops         []models.Image
-		Logos             []models.Image
-		Trailers          []models.Trailer
-		Licensors         []string
+		ReleaseYear            int
+		AgeRating              string
+		PortriatPoster         string
+		PortriatBlurHash       string
+		SeriePortriatPoster    string
+		SeriePortriatBlurHash  string
+		SerieLandscapePoster   string
+		SerieLandscapeBlurHash string
+		AnimePlanetID          string
+		OriginalTitle          string
+		Aired                  time.Time
+		Genres                 []string
+		Studios                []string
+		Tags                   []string
+		PsCs                   []string
+		Titles                 models.Titles
+		Posters                []models.Image
+		Trailers               []models.Trailer
+		Licensors              []string
+		SeriePosters           []models.Image
+		SerieBackdrops         []models.Image
+		SerieLogos             []models.Image
+		SerieTrailers          []models.Trailer
 	)
 
 	var (
@@ -259,12 +263,18 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			Licensors = append(Licensors, p.Name)
 		}
 	}
+	if MyAnimeListData.Data.Trailer.YoutubeID != "" {
+		Trailers = append(Trailers, models.Trailer{
+			Official: true,
+			Host:     "YouTube",
+			Key:      MyAnimeListData.Data.Trailer.YoutubeID,
+		})
+	}
 
 	time.Sleep(500 * time.Millisecond)
 	Query.papaSerieID = server.getMALOriginalID(qmalData.Data.MalId)
 
 	if Query.TVDbID == 0 {
-
 		if Query.papaSerieID != 0 {
 			time.Sleep(700 * time.Millisecond)
 
@@ -320,6 +330,51 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 													if mld.Data.Aired.From.Year() == year {
 														Query.papaSerieTVDbID = serie.Data.ID
+														if len(serie.Data.Artworks) > 0 {
+															for _, d := range serie.Data.Artworks {
+																if d.Image != "" {
+																	if d.Type == 3 || d.Type == 22 {
+																		bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+																		SerieBackdrops = append(SerieBackdrops, models.Image{
+																			Height:    d.Height,
+																			Width:     d.Width,
+																			Image:     d.Image,
+																			Thumbnail: d.Thumbnail,
+																			BlurHash:  bb,
+																		})
+																	} else if d.Type == 2 || d.Type == 7 {
+																		pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+																		SeriePosters = append(SeriePosters, models.Image{
+																			Height:    d.Height,
+																			Width:     d.Width,
+																			Image:     d.Image,
+																			Thumbnail: d.Thumbnail,
+																			BlurHash:  pp,
+																		})
+																	} else if d.Type == 23 || d.Type == 5 {
+																		ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+																		SerieLogos = append(SerieLogos, models.Image{
+																			Height:    d.Height,
+																			Width:     d.Width,
+																			Image:     d.Image,
+																			Thumbnail: d.Thumbnail,
+																			BlurHash:  ll,
+																		})
+																	}
+																}
+															}
+														}
+														if len(serie.Data.Trailers) > 0 {
+															for _, t := range serie.Data.Trailers {
+																if utils.ExtractYTKey(t.URL) != "" {
+																	SerieTrailers = append(SerieTrailers, models.Trailer{
+																		Official: true,
+																		Host:     "YouTube",
+																		Key:      utils.ExtractYTKey(t.URL),
+																	})
+																}
+															}
+														}
 														break
 													}
 												}
@@ -369,13 +424,54 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 										if MyAnimeListData.Data.Aired.From.Year() == year {
 
-											if Query.papaSerieTVDbID == 0 {
-												Query.papaSerieTVDbID = season.Data.SeriesID
+											Query.papaSerieTVDbID = season.Data.SeriesID
+											if len(serie.Data.Artworks) > 0 {
+												for _, d := range serie.Data.Artworks {
+													if d.Image != "" {
+														if d.Type == 3 || d.Type == 22 {
+															bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+															SerieBackdrops = append(SerieBackdrops, models.Image{
+																Height:    d.Height,
+																Width:     d.Width,
+																Image:     d.Image,
+																Thumbnail: d.Thumbnail,
+																BlurHash:  bb,
+															})
+														} else if d.Type == 2 || d.Type == 7 {
+															pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+															SeriePosters = append(SeriePosters, models.Image{
+																Height:    d.Height,
+																Width:     d.Width,
+																Image:     d.Image,
+																Thumbnail: d.Thumbnail,
+																BlurHash:  pp,
+															})
+														} else if d.Type == 23 || d.Type == 5 {
+															ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+															SerieLogos = append(SerieLogos, models.Image{
+																Height:    d.Height,
+																Width:     d.Width,
+																Image:     d.Image,
+																Thumbnail: d.Thumbnail,
+																BlurHash:  ll,
+															})
+														}
+													}
+												}
+											}
+											if len(serie.Data.Trailers) > 0 {
+												for _, t := range serie.Data.Trailers {
+													if utils.ExtractYTKey(t.URL) != "" {
+														SerieTrailers = append(SerieTrailers, models.Trailer{
+															Official: true,
+															Host:     "YouTube",
+															Key:      utils.ExtractYTKey(t.URL),
+														})
+													}
+												}
 											}
 											Query.TVDbID = season.Data.ID
 											Query.seasonNumber = season.Data.Number
-
-											
 
 											if len(season.Data.Artwork) > 0 {
 												for _, d := range season.Data.Artwork {
@@ -668,6 +764,51 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 															if Query.papaSerieTVDbID == 0 {
 																Query.papaSerieTVDbID = season.Data.SeriesID
 															}
+															if len(serie.Data.Artworks) > 0 {
+																for _, d := range serie.Data.Artworks {
+																	if d.Image != "" {
+																		if d.Type == 3 || d.Type == 22 {
+																			bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+																			SerieBackdrops = append(SerieBackdrops, models.Image{
+																				Height:    d.Height,
+																				Width:     d.Width,
+																				Image:     d.Image,
+																				Thumbnail: d.Thumbnail,
+																				BlurHash:  bb,
+																			})
+																		} else if d.Type == 2 || d.Type == 7 {
+																			pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+																			SeriePosters = append(SeriePosters, models.Image{
+																				Height:    d.Height,
+																				Width:     d.Width,
+																				Image:     d.Image,
+																				Thumbnail: d.Thumbnail,
+																				BlurHash:  pp,
+																			})
+																		} else if d.Type == 23 || d.Type == 5 {
+																			ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+																			SerieLogos = append(SerieLogos, models.Image{
+																				Height:    d.Height,
+																				Width:     d.Width,
+																				Image:     d.Image,
+																				Thumbnail: d.Thumbnail,
+																				BlurHash:  ll,
+																			})
+																		}
+																	}
+																}
+															}
+															if len(serie.Data.Trailers) > 0 {
+																for _, t := range serie.Data.Trailers {
+																	if utils.ExtractYTKey(t.URL) != "" {
+																		SerieTrailers = append(SerieTrailers, models.Trailer{
+																			Official: true,
+																			Host:     "YouTube",
+																			Key:      utils.ExtractYTKey(t.URL),
+																		})
+																	}
+																}
+															}
 															Query.TVDbID = season.Data.ID
 															Query.seasonNumber = season.Data.Number
 
@@ -725,6 +866,51 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 																		Query.TVDbID = season.Data.ID
 																		Query.seasonNumber = season.Data.Number
 
+																		if len(serie.Data.Artworks) > 0 {
+																			for _, d := range serie.Data.Artworks {
+																				if d.Image != "" {
+																					if d.Type == 3 || d.Type == 22 {
+																						bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+																						SerieBackdrops = append(SerieBackdrops, models.Image{
+																							Height:    d.Height,
+																							Width:     d.Width,
+																							Image:     d.Image,
+																							Thumbnail: d.Thumbnail,
+																							BlurHash:  bb,
+																						})
+																					} else if d.Type == 2 || d.Type == 7 {
+																						pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+																						SeriePosters = append(SeriePosters, models.Image{
+																							Height:    d.Height,
+																							Width:     d.Width,
+																							Image:     d.Image,
+																							Thumbnail: d.Thumbnail,
+																							BlurHash:  pp,
+																						})
+																					} else if d.Type == 23 || d.Type == 5 {
+																						ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+																						SerieLogos = append(SerieLogos, models.Image{
+																							Height:    d.Height,
+																							Width:     d.Width,
+																							Image:     d.Image,
+																							Thumbnail: d.Thumbnail,
+																							BlurHash:  ll,
+																						})
+																					}
+																				}
+																			}
+																		}
+																		if len(serie.Data.Trailers) > 0 {
+																			for _, t := range serie.Data.Trailers {
+																				if utils.ExtractYTKey(t.URL) != "" {
+																					SerieTrailers = append(SerieTrailers, models.Trailer{
+																						Official: true,
+																						Host:     "YouTube",
+																						Key:      utils.ExtractYTKey(t.URL),
+																					})
+																				}
+																			}
+																		}
 																		if len(season.Data.Artwork) > 0 {
 																			for _, d := range season.Data.Artwork {
 																				if d.Image != "" {
@@ -783,7 +969,51 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 															}
 															Query.TVDbID = season.Data.ID
 															Query.seasonNumber = season.Data.Number
-
+															if len(serie.Data.Artworks) > 0 {
+																for _, d := range serie.Data.Artworks {
+																	if d.Image != "" {
+																		if d.Type == 3 || d.Type == 22 {
+																			bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+																			SerieBackdrops = append(SerieBackdrops, models.Image{
+																				Height:    d.Height,
+																				Width:     d.Width,
+																				Image:     d.Image,
+																				Thumbnail: d.Thumbnail,
+																				BlurHash:  bb,
+																			})
+																		} else if d.Type == 2 || d.Type == 7 {
+																			pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+																			SeriePosters = append(SeriePosters, models.Image{
+																				Height:    d.Height,
+																				Width:     d.Width,
+																				Image:     d.Image,
+																				Thumbnail: d.Thumbnail,
+																				BlurHash:  pp,
+																			})
+																		} else if d.Type == 23 || d.Type == 5 {
+																			ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+																			SerieLogos = append(SerieLogos, models.Image{
+																				Height:    d.Height,
+																				Width:     d.Width,
+																				Image:     d.Image,
+																				Thumbnail: d.Thumbnail,
+																				BlurHash:  ll,
+																			})
+																		}
+																	}
+																}
+															}
+															if len(serie.Data.Trailers) > 0 {
+																for _, t := range serie.Data.Trailers {
+																	if utils.ExtractYTKey(t.URL) != "" {
+																		SerieTrailers = append(SerieTrailers, models.Trailer{
+																			Official: true,
+																			Host:     "YouTube",
+																			Key:      utils.ExtractYTKey(t.URL),
+																		})
+																	}
+																}
+															}
 															if len(season.Data.Artwork) > 0 {
 																for _, d := range season.Data.Artwork {
 																	if d.Image != "" {
@@ -899,7 +1129,51 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 																}
 																Query.TVDbID = season.Data.ID
 																Query.seasonNumber = season.Data.Number
-
+																if len(serie.Data.Artworks) > 0 {
+																	for _, d := range serie.Data.Artworks {
+																		if d.Image != "" {
+																			if d.Type == 3 || d.Type == 22 {
+																				bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+																				SerieBackdrops = append(SerieBackdrops, models.Image{
+																					Height:    d.Height,
+																					Width:     d.Width,
+																					Image:     d.Image,
+																					Thumbnail: d.Thumbnail,
+																					BlurHash:  bb,
+																				})
+																			} else if d.Type == 2 || d.Type == 7 {
+																				pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+																				SeriePosters = append(SeriePosters, models.Image{
+																					Height:    d.Height,
+																					Width:     d.Width,
+																					Image:     d.Image,
+																					Thumbnail: d.Thumbnail,
+																					BlurHash:  pp,
+																				})
+																			} else if d.Type == 23 || d.Type == 5 {
+																				ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+																				SerieLogos = append(SerieLogos, models.Image{
+																					Height:    d.Height,
+																					Width:     d.Width,
+																					Image:     d.Image,
+																					Thumbnail: d.Thumbnail,
+																					BlurHash:  ll,
+																				})
+																			}
+																		}
+																	}
+																}
+																if len(serie.Data.Trailers) > 0 {
+																	for _, t := range serie.Data.Trailers {
+																		if utils.ExtractYTKey(t.URL) != "" {
+																			SerieTrailers = append(SerieTrailers, models.Trailer{
+																				Official: true,
+																				Host:     "YouTube",
+																				Key:      utils.ExtractYTKey(t.URL),
+																			})
+																		}
+																	}
+																}
 																if len(season.Data.Artwork) > 0 {
 																	for _, d := range season.Data.Artwork {
 																		if d.Image != "" {
@@ -953,7 +1227,51 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 																			Query.TVDbID = season.Data.ID
 																			Query.seasonNumber = season.Data.Number
-
+																			if len(serie.Data.Artworks) > 0 {
+																				for _, d := range serie.Data.Artworks {
+																					if d.Image != "" {
+																						if d.Type == 3 || d.Type == 22 {
+																							bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+																							SerieBackdrops = append(SerieBackdrops, models.Image{
+																								Height:    d.Height,
+																								Width:     d.Width,
+																								Image:     d.Image,
+																								Thumbnail: d.Thumbnail,
+																								BlurHash:  bb,
+																							})
+																						} else if d.Type == 2 || d.Type == 7 {
+																							pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+																							SeriePosters = append(SeriePosters, models.Image{
+																								Height:    d.Height,
+																								Width:     d.Width,
+																								Image:     d.Image,
+																								Thumbnail: d.Thumbnail,
+																								BlurHash:  pp,
+																							})
+																						} else if d.Type == 23 || d.Type == 5 {
+																							ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+																							SerieLogos = append(SerieLogos, models.Image{
+																								Height:    d.Height,
+																								Width:     d.Width,
+																								Image:     d.Image,
+																								Thumbnail: d.Thumbnail,
+																								BlurHash:  ll,
+																							})
+																						}
+																					}
+																				}
+																			}
+																			if len(serie.Data.Trailers) > 0 {
+																				for _, t := range serie.Data.Trailers {
+																					if utils.ExtractYTKey(t.URL) != "" {
+																						SerieTrailers = append(SerieTrailers, models.Trailer{
+																							Official: true,
+																							Host:     "YouTube",
+																							Key:      utils.ExtractYTKey(t.URL),
+																						})
+																					}
+																				}
+																			}
 																			if len(season.Data.Artwork) > 0 {
 																				for _, d := range season.Data.Artwork {
 																					if d.Image != "" {
@@ -1011,7 +1329,51 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 																}
 																Query.TVDbID = season.Data.ID
 																Query.seasonNumber = season.Data.Number
-
+																if len(serie.Data.Artworks) > 0 {
+																	for _, d := range serie.Data.Artworks {
+																		if d.Image != "" {
+																			if d.Type == 3 || d.Type == 22 {
+																				bb, _ := utils.GetBlurHash(d.Thumbnail, "")
+																				SerieBackdrops = append(SerieBackdrops, models.Image{
+																					Height:    d.Height,
+																					Width:     d.Width,
+																					Image:     d.Image,
+																					Thumbnail: d.Thumbnail,
+																					BlurHash:  bb,
+																				})
+																			} else if d.Type == 2 || d.Type == 7 {
+																				pp, _ := utils.GetBlurHash(d.Thumbnail, "")
+																				SeriePosters = append(SeriePosters, models.Image{
+																					Height:    d.Height,
+																					Width:     d.Width,
+																					Image:     d.Image,
+																					Thumbnail: d.Thumbnail,
+																					BlurHash:  pp,
+																				})
+																			} else if d.Type == 23 || d.Type == 5 {
+																				ll, _ := utils.GetBlurHash(d.Thumbnail, "")
+																				SerieLogos = append(SerieLogos, models.Image{
+																					Height:    d.Height,
+																					Width:     d.Width,
+																					Image:     d.Image,
+																					Thumbnail: d.Thumbnail,
+																					BlurHash:  ll,
+																				})
+																			}
+																		}
+																	}
+																}
+																if len(serie.Data.Trailers) > 0 {
+																	for _, t := range serie.Data.Trailers {
+																		if utils.ExtractYTKey(t.URL) != "" {
+																			SerieTrailers = append(SerieTrailers, models.Trailer{
+																				Official: true,
+																				Host:     "YouTube",
+																				Key:      utils.ExtractYTKey(t.URL),
+																			})
+																		}
+																	}
+																}
 																if len(season.Data.Artwork) > 0 {
 																	for _, d := range season.Data.Artwork {
 																		if d.Image != "" {
@@ -1063,7 +1425,6 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 	var tmdbTime time.Time
 	if Query.TMDbID == 0 {
-
 		if Query.papaSerieTVDbID != 0 {
 			serie, err := server.TMDB.GetFindByID(fmt.Sprint(Query.papaSerieTVDbID), map[string]string{"external_source": "tvdb_id"})
 			if err != nil {
@@ -1085,6 +1446,54 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 						if Query.papaSerieAired.Year() == fair.Year() {
 							Query.papaSerieTMDbID = int(s.ID)
+							server.getTMDBPic(s.PosterPath, s.BackdropPath, &SeriePortriatBlurHash, &SeriePortriatPoster, &SerieLandscapeBlurHash, &SerieLandscapePoster)
+
+							samimg, _ := server.TMDB.GetTVImages(int(s.ID), nil)
+							if err == nil {
+								if samimg != nil {
+									for _, b := range samimg.Backdrops {
+										if b.FilePath != "" {
+											bb, _ := utils.GetBlurHash(server.DecodeIMG+b.FilePath, "")
+											SerieBackdrops = append(SerieBackdrops, models.Image{
+												Height:    b.Height,
+												Width:     b.Width,
+												Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + b.FilePath)),
+												Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w500" + b.FilePath),
+												BlurHash:  bb,
+											})
+										}
+									}
+									for _, p := range samimg.Posters {
+										if p.FilePath != "" {
+											pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
+											SeriePosters = append(SeriePosters, models.Image{
+												Height:    p.Height,
+												Width:     p.Width,
+												Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
+												Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
+												BlurHash:  pp,
+											})
+
+										}
+									}
+								}
+							}
+
+							tttt, _ := server.TMDB.GetTVVideos(int(s.ID), nil)
+							if len(tttt.Results) > 0 {
+								for _, t := range tttt.Results {
+									if strings.Contains(strings.ToLower(t.Site), "youtube") {
+										if t.Key != "" {
+											SerieTrailers = append(SerieTrailers, models.Trailer{
+												Official: true,
+												Host:     "YouTube",
+												Key:      t.Key,
+											})
+										}
+
+									}
+								}
+							}
 							break
 						}
 					}
@@ -1113,6 +1522,43 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 							if Query.Aired.Year() == air.Year() {
 								tmdbTime = air
 								Query.TMDbID = int(s.ID)
+
+								amimg, _ := server.TMDB.GetTVSeasonImages(Query.papaSerieTMDbID, s.SeasonNumber, nil)
+								if amimg != nil {
+									for _, p := range amimg.Posters {
+										if p.FilePath != "" {
+											pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
+											Posters = append(Posters, models.Image{
+												Height:    p.Height,
+												Width:     p.Width,
+												Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
+												Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
+												BlurHash:  pp,
+											})
+
+										}
+									}
+								}
+
+								server.getTMDBPic(s.PosterPath, "", &PortriatBlurHash, &PortriatPoster, nil, nil)
+
+								tttt, _ := server.TMDB.GetTVSeasonVideos(Query.papaSerieTMDbID, s.SeasonNumber, nil)
+								if tttt != nil {
+									if len(tttt.Results) > 0 {
+										for _, t := range tttt.Results {
+											if strings.Contains(strings.ToLower(t.Site), "youtube") {
+												if t.Key != "" {
+													Trailers = append(Trailers, models.Trailer{
+														Official: true,
+														Host:     "YouTube",
+														Key:      t.Key,
+													})
+												}
+											}
+										}
+									}
+								}
+
 								break
 							}
 
@@ -1146,6 +1592,93 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 								tmdbTime = air
 								Query.TMDbID = int(s.ID)
 								Query.papaSerieTMDbID = int(s.ShowID)
+
+								samimg, _ := server.TMDB.GetTVImages(int(s.ShowID), nil)
+								if err == nil {
+									if samimg != nil {
+										for _, b := range samimg.Backdrops {
+											if b.FilePath != "" {
+												bb, _ := utils.GetBlurHash(server.DecodeIMG+b.FilePath, "")
+												SerieBackdrops = append(SerieBackdrops, models.Image{
+													Height:    b.Height,
+													Width:     b.Width,
+													Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + b.FilePath)),
+													Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w500" + b.FilePath),
+													BlurHash:  bb,
+												})
+											}
+										}
+										for _, p := range samimg.Posters {
+											if p.FilePath != "" {
+												pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
+												SeriePosters = append(SeriePosters, models.Image{
+													Height:    p.Height,
+													Width:     p.Width,
+													Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
+													Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
+													BlurHash:  pp,
+												})
+
+											}
+										}
+									}
+								}
+								stttt, _ := server.TMDB.GetTVVideos(int(s.ShowID), nil)
+								if len(stttt.Results) > 0 {
+									for _, t := range stttt.Results {
+										if strings.Contains(strings.ToLower(t.Site), "youtube") {
+											if t.Key != "" {
+												SerieTrailers = append(SerieTrailers, models.Trailer{
+													Official: true,
+													Host:     "YouTube",
+													Key:      t.Key,
+												})
+											}
+
+										}
+									}
+								}
+								//server.getTMDBPic(s.PosterPath, s.BackdropPath, &SeriePortriatBlurHash, &SeriePortriatPoster, &SerieLandscapeBlurHash, &SerieLandscapePoster)
+
+								amimg, _ := server.TMDB.GetTVSeasonImages(int(s.ShowID), s.SeasonNumber, nil)
+								if amimg != nil {
+									for _, p := range amimg.Posters {
+										if p.FilePath != "" {
+											pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
+											Posters = append(Posters, models.Image{
+												Height:    p.Height,
+												Width:     p.Width,
+												Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
+												Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
+												BlurHash:  pp,
+											})
+
+										}
+									}
+								}
+
+								anime, _ := server.TMDB.GetTVSeasonDetails(int(s.ShowID), s.SeasonNumber, nil)
+								if anime != nil {
+									server.getTMDBPic(anime.PosterPath, "", &PortriatBlurHash, &PortriatPoster, nil, nil)
+								}
+
+								tttt, _ := server.TMDB.GetTVSeasonVideos(int(s.ShowID), s.SeasonNumber, nil)
+								if tttt != nil {
+									if len(tttt.Results) > 0 {
+										for _, t := range tttt.Results {
+											if strings.Contains(strings.ToLower(t.Site), "youtube") {
+												if t.Key != "" {
+													Trailers = append(Trailers, models.Trailer{
+														Official: true,
+														Host:     "YouTube",
+														Key:      t.Key,
+													})
+												}
+											}
+										}
+									}
+								}
+
 								break
 							}
 
@@ -1188,8 +1721,93 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 									if Query.Aired.Year() == air.Year() {
 										tmdbTime = air
 										Query.TMDbID = int(s.ID)
+
 										Query.papaSerieTMDbID = int(q.ID)
+										samimg, _ := server.TMDB.GetTVImages(int(q.ID), nil)
+										if err == nil {
+											if samimg != nil {
+												for _, b := range samimg.Backdrops {
+													if b.FilePath != "" {
+														bb, _ := utils.GetBlurHash(server.DecodeIMG+b.FilePath, "")
+														SerieBackdrops = append(SerieBackdrops, models.Image{
+															Height:    b.Height,
+															Width:     b.Width,
+															Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + b.FilePath)),
+															Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w500" + b.FilePath),
+															BlurHash:  bb,
+														})
+													}
+												}
+												for _, p := range samimg.Posters {
+													if p.FilePath != "" {
+														pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
+														SeriePosters = append(SeriePosters, models.Image{
+															Height:    p.Height,
+															Width:     p.Width,
+															Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
+															Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
+															BlurHash:  pp,
+														})
+
+													}
+												}
+											}
+										}
+
+										stttt, _ := server.TMDB.GetTVVideos(int(q.ID), nil)
+										if len(stttt.Results) > 0 {
+											for _, t := range stttt.Results {
+												if strings.Contains(strings.ToLower(t.Site), "youtube") {
+													if t.Key != "" {
+														SerieTrailers = append(SerieTrailers, models.Trailer{
+															Official: true,
+															Host:     "YouTube",
+															Key:      t.Key,
+														})
+													}
+
+												}
+											}
+										}
+										server.getTMDBPic(q.PosterPath, q.BackdropPath, &SeriePortriatBlurHash, &SeriePortriatPoster, &SerieLandscapeBlurHash, &SerieLandscapePoster)
 										Query.papaSerieAired = fair
+
+										amimg, _ := server.TMDB.GetTVSeasonImages(int(q.ID), s.SeasonNumber, nil)
+										if amimg != nil {
+											for _, p := range amimg.Posters {
+												if p.FilePath != "" {
+													pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
+													Posters = append(Posters, models.Image{
+														Height:    p.Height,
+														Width:     p.Width,
+														Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
+														Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
+														BlurHash:  pp,
+													})
+
+												}
+											}
+										}
+
+										server.getTMDBPic(s.PosterPath, "", &PortriatBlurHash, &PortriatPoster, nil, nil)
+
+										tttt, _ := server.TMDB.GetTVSeasonVideos(int(q.ID), s.SeasonNumber, nil)
+										if tttt != nil {
+											if len(tttt.Results) > 0 {
+												for _, t := range tttt.Results {
+													if strings.Contains(strings.ToLower(t.Site), "youtube") {
+														if t.Key != "" {
+															Trailers = append(Trailers, models.Trailer{
+																Official: true,
+																Host:     "YouTube",
+																Key:      t.Key,
+															})
+														}
+													}
+												}
+											}
+										}
+
 										break
 									}
 
@@ -1201,607 +1819,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 			}
 		}
-
 	}
-
-	/*	var queries []string
-		var totalSearch tvdb.Search
-		queries = append(queries, MyAnimeListData.Data.TitleEnglish, MyAnimeListData.Data.Title)
-		queries = append(queries, MyAnimeListData.Data.TitleSynonyms...)
-
-		if len(queries) > 0 {
-			for _, t := range queries {
-				Series, err := server.TVDB.GetSearch(t, ReleaseYear)
-				if err != nil {
-					continue
-				}
-				totalSearch.Data = append(totalSearch.Data, Series.Data...)
-			}
-		}
-
-		for _, a := range totalSearch.Data {
-			server.LOG.Info().Msgf("search ID: %s", a.ID)
-			server.LOG.Info().Msgf("search TVDB: %s", a.TvdbID)
-			server.LOG.Info().Msgf("search Name: %s", a.Name)
-			server.LOG.Info().Msgf("search Year: %s", a.Year)
-			server.LOG.Info().Msgf("search ExtendedTitle: %s", a.ExtendedTitle)
-			server.LOG.Info().Msgf("search FirstAirTime: %s", a.FirstAirTime)
-
-			qDate, err := time.Parse(time.DateOnly, a.FirstAirTime)
-			if err != nil {
-				continue
-			}
-
-			var aDate time.Time
-			if MyAnimeListData.Data.Aired.From.String() != "" {
-				aDate = MyAnimeListData.Data.Aired.From
-
-			} else {
-				aDate, err = time.Parse(time.DateOnly, AniDBData.Startdate)
-				if err != nil {
-					continue
-				}
-			}
-
-			if aDate.Year() == qDate.Year() && aDate.Month() == qDate.Month() {
-				if strings.Contains(a.Type, "tv") {
-					newTVDBid, err := strconv.Atoi(a.TvdbID)
-					if err != nil {
-						continue
-					}
-					TVDbID = int(newTVDBid)
-					Serie, err := server.TVDB.GetSeriesByIDExtanded(TVDbID)
-					if err != nil {
-						continue
-					}
-					if Serie != nil {
-						for _, r := range Serie.Data.RemoteIds {
-							if strings.Contains(strings.ToLower(r.SourceName), "imdb") && r.SourceName != "" {
-								IMDbID = r.ID
-							}
-						}
-
-						if len(Serie.Data.Genres) > 0 {
-							for _, g := range Serie.Data.Genres {
-								Genres = append(Genres, g.Name)
-							}
-						}
-
-						if len(Serie.Data.Companies) > 0 {
-							for _, d := range Serie.Data.Companies {
-								if d.Name != "" {
-									Studios = append(Studios, d.Name)
-								}
-							}
-						}
-						if len(Serie.Data.Artworks) > 0 {
-							for _, d := range Serie.Data.Artworks {
-								if d.Image != "" {
-									if d.Type == 15 {
-										bb, _ := utils.GetBlurHash(d.Thumbnail, "")
-										Backdrops = append(Backdrops, models.Image{
-											Height:    d.Height,
-											Width:     d.Width,
-											Image:     d.Image,
-											Thumbnail: d.Thumbnail,
-											BlurHash:  bb,
-										})
-									} else if d.Type == 14 {
-										pp, _ := utils.GetBlurHash(d.Thumbnail, "")
-										Posters = append(Posters, models.Image{
-											Height:    d.Height,
-											Width:     d.Width,
-											Image:     d.Image,
-											Thumbnail: d.Thumbnail,
-											BlurHash:  pp,
-										})
-									} else if d.Type == 25 {
-										ll, _ := utils.GetBlurHash(d.Thumbnail, "")
-										Logos = append(Logos, models.Image{
-											Height:    d.Height,
-											Width:     d.Width,
-											Image:     d.Image,
-											Thumbnail: d.Thumbnail,
-											BlurHash:  ll,
-										})
-									}
-								}
-							}
-						}
-						if len(Serie.Data.Trailers) > 0 {
-							for _, t := range Serie.Data.Trailers {
-								if utils.ExtractYTKey(t.URL) != "" {
-									Trailers = append(Trailers, models.Trailer{
-										Official: true,
-										Host:     "YouTube",
-										Key:      utils.ExtractYTKey(t.URL),
-									})
-								}
-							}
-						}
-					}
-					break
-				} else if strings.Contains(a.Type, "movie") {
-					newTVDBid, err := strconv.Atoi(a.TvdbID)
-					if err != nil {
-						continue
-					}
-
-					TVDbID = int(newTVDBid)
-					movie, err := server.TVDB.GetMovieByIDExtended(TVDbID)
-					if err != nil {
-						continue
-					}
-					if movie != nil {
-						for _, r := range movie.Data.RemoteIds {
-							if strings.Contains(strings.ToLower(r.SourceName), "imdb") && r.SourceName != "" {
-								IMDbID = r.ID
-							}
-						}
-
-						if len(movie.Data.Genres) > 0 {
-							for _, g := range movie.Data.Genres {
-								Genres = append(Genres, g.Name)
-							}
-						}
-						if len(Studios) == 0 {
-							if len(movie.Data.Companies.Production) > 0 {
-								for _, p := range movie.Data.Companies.Production {
-									if p.Name != "" {
-										Studios = append(Studios, p.Name)
-									}
-								}
-							}
-						} else {
-							if len(movie.Data.Companies.Production) > 0 {
-								for _, p := range movie.Data.Companies.Production {
-									if p.Name != "" {
-										Licensors = append(Licensors, p.Name)
-									}
-								}
-							}
-						}
-
-						if len(movie.Data.Companies.Distributor) > 0 {
-							for _, d := range movie.Data.Companies.Distributor {
-								if d.Name != "" {
-									Licensors = append(Licensors, d.Name)
-								}
-							}
-						}
-						if len(movie.Data.Artworks) > 0 {
-							for _, d := range movie.Data.Artworks {
-								if d.Image != "" {
-									if d.Type == 15 {
-										bb, _ := utils.GetBlurHash(d.Thumbnail, "")
-										Backdrops = append(Backdrops, models.Image{
-											Height:    d.Height,
-											Width:     d.Width,
-											Image:     d.Image,
-											Thumbnail: d.Thumbnail,
-											BlurHash:  bb,
-										})
-									} else if d.Type == 14 {
-										pp, _ := utils.GetBlurHash(d.Thumbnail, "")
-										Posters = append(Posters, models.Image{
-											Height:    d.Height,
-											Width:     d.Width,
-											Image:     d.Image,
-											Thumbnail: d.Thumbnail,
-											BlurHash:  pp,
-										})
-									} else if d.Type == 25 {
-										ll, _ := utils.GetBlurHash(d.Thumbnail, "")
-										Logos = append(Logos, models.Image{
-											Height:    d.Height,
-											Width:     d.Width,
-											Image:     d.Image,
-											Thumbnail: d.Thumbnail,
-											BlurHash:  ll,
-										})
-									}
-								}
-							}
-						}
-						if len(movie.Data.Trailers) > 0 {
-							for _, t := range movie.Data.Trailers {
-								if utils.ExtractYTKey(t.URL) != "" {
-									Trailers = append(Trailers, models.Trailer{
-										Official: true,
-										Host:     "YouTube",
-										Key:      utils.ExtractYTKey(t.URL),
-									})
-								}
-							}
-						}
-					}
-					break
-				}
-			}
-		}
-
-		if TVDbID == 0 {
-			if animeResources.Data.TheTVdbID != 0 {
-				Serie, err := server.TVDB.GetSeriesByIDExtanded(animeResources.Data.TheTVdbID)
-				if err != nil {
-					TVDbID = animeResources.Data.TheTVdbID
-				}
-
-				if Serie != nil {
-					for _, r := range Serie.Data.RemoteIds {
-						if strings.Contains(strings.ToLower(r.SourceName), "imdb") && r.SourceName != "" {
-							IMDbID = r.ID
-						}
-					}
-
-					if len(Serie.Data.Genres) > 0 {
-						for _, g := range Serie.Data.Genres {
-							Genres = append(Genres, g.Name)
-						}
-					}
-
-					if len(Serie.Data.Companies) > 0 {
-						for _, d := range Serie.Data.Companies {
-							if d.Name != "" {
-								Licensors = append(Licensors, d.Name)
-							}
-						}
-					}
-					if len(Serie.Data.Artworks) > 0 {
-						for _, d := range Serie.Data.Artworks {
-							if d.Image != "" {
-								if d.Type == 15 {
-									bb, _ := utils.GetBlurHash(d.Thumbnail, "")
-									Backdrops = append(Backdrops, models.Image{
-										Height:    d.Height,
-										Width:     d.Width,
-										Image:     d.Image,
-										Thumbnail: d.Thumbnail,
-										BlurHash:  bb,
-									})
-								} else if d.Type == 14 {
-									pp, _ := utils.GetBlurHash(d.Thumbnail, "")
-									Posters = append(Posters, models.Image{
-										Height:    d.Height,
-										Width:     d.Width,
-										Image:     d.Image,
-										Thumbnail: d.Thumbnail,
-										BlurHash:  pp,
-									})
-								} else if d.Type == 25 {
-									ll, _ := utils.GetBlurHash(d.Thumbnail, "")
-									Logos = append(Logos, models.Image{
-										Height:    d.Height,
-										Width:     d.Width,
-										Image:     d.Image,
-										Thumbnail: d.Thumbnail,
-										BlurHash:  ll,
-									})
-								}
-							}
-						}
-					}
-					if len(Serie.Data.Trailers) > 0 {
-						for _, t := range Serie.Data.Trailers {
-							if utils.ExtractYTKey(t.URL) != "" {
-								Trailers = append(Trailers, models.Trailer{
-									Official: true,
-									Host:     "YouTube",
-									Key:      utils.ExtractYTKey(t.URL),
-								})
-							}
-						}
-					}
-				}
-			}
-		}
-
-		var TMDBIDs []int
-		for _, r := range AniDBData.Resources.Resource {
-			if strings.Contains(r.Type, "44") {
-				if len(r.Externalentity) > 0 {
-					for _, f := range r.Externalentity {
-						for _, v := range f.Identifier {
-							id, err := strconv.Atoi(v)
-							if err != nil {
-								continue
-							}
-							TMDBIDs = append(TMDBIDs, id)
-						}
-					}
-				}
-			}
-		}
-
-		if animeResources.Data.TMDdID != nil {
-			tt, err := animeResources.Data.TMDdID.MarshalJSON()
-			if err != nil {
-				TMDbID = 0
-			} else {
-				for _, d := range strings.Split(string(tt), ",") {
-					ti, err := strconv.Atoi(d)
-					if err != nil {
-						TMDbID = 0
-					} else {
-						TMDBIDs = append(TMDBIDs, int(ti))
-					}
-				}
-			}
-		}
-
-		var TMDBRuntime string
-		var TMDBTitle string
-		if len(TMDBIDs) > 0 {
-			for _, l := range TMDBIDs {
-				TMDbID = l
-				anime, err := server.TMDB.GetTVDetails(TMDbID, nil)
-				if err != nil {
-					PortriatBlurHash = ""
-					LandscapeBlurHash = ""
-					TMDbID = 0
-				} else {
-					var rd bool
-					if anime.FirstAirDate != "" {
-						eDate, err := time.Parse(time.DateOnly, anime.FirstAirDate)
-						if err != nil {
-							PortriatBlurHash = ""
-							LandscapeBlurHash = ""
-							TMDbID = 0
-						}
-						qDate := MyAnimeListData.Data.Aired.From
-						if eDate.Year() == qDate.Year() && eDate.Month() == qDate.Month() {
-							rd = true
-						}
-					}
-
-					if rd {
-						if OriginalTitle == "" {
-							OriginalTitle = anime.OriginalName
-						}
-						TMDBRuntime = fmt.Sprintf("%dm", anime.EpisodeRunTime[0])
-						TMDBTitle = anime.Name
-						server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
-						server.getTMDBRating(TMDbID, &AgeRating)
-						if len(anime.Genres) > 0 {
-							for _, g := range anime.Genres {
-								if g.Name != "" {
-									Genres = append(Genres, g.Name)
-								}
-							}
-						}
-						if len(anime.ProductionCompanies) > 0 {
-							for _, p := range anime.ProductionCompanies {
-								if p.Name != "" {
-									Licensors = append(Licensors, p.Name)
-								}
-							}
-						}
-
-						amimg, _ := server.TMDB.GetTVImages(TMDbID, nil)
-						if err == nil {
-							if amimg != nil {
-								for _, b := range amimg.Backdrops {
-									if b.FilePath != "" {
-										bb, _ := utils.GetBlurHash(server.DecodeIMG+b.FilePath, "")
-										Backdrops = append(Backdrops, models.Image{
-											Height:    b.Height,
-											Width:     b.Width,
-											Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + b.FilePath)),
-											Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w500" + b.FilePath),
-											BlurHash:  bb,
-										})
-									}
-								}
-								for _, p := range amimg.Posters {
-									if p.FilePath != "" {
-										pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
-										Posters = append(Posters, models.Image{
-											Height:    p.Height,
-											Width:     p.Width,
-											Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
-											Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
-											BlurHash:  pp,
-										})
-
-									}
-								}
-							}
-						}
-						tttt, _ := server.TMDB.GetTVVideos(TMDbID, nil)
-						if len(tttt.Results) > 0 {
-							for _, t := range tttt.Results {
-								if strings.Contains(strings.ToLower(t.Site), "youtube") {
-									if t.Key != "" {
-										Trailers = append(Trailers, models.Trailer{
-											Official: true,
-											Host:     "YouTube",
-											Key:      t.Key,
-										})
-									}
-								}
-							}
-						}
-						break
-					}
-				}
-			}
-		}
-
-		if TMDbID != 0 && PortriatBlurHash == "" && LandscapeBlurHash == "" {
-			anime, _ := server.TMDB.GetTVDetails(TMDbID, nil)
-			if anime != nil {
-				OriginalTitle = anime.OriginalName
-				TMDBTitle = anime.Name
-				TMDBRuntime = fmt.Sprintf("%dm", anime.EpisodeRunTime[0])
-				server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
-				server.getTMDBRating(TMDbID, &AgeRating)
-				if len(anime.Genres) > 0 {
-					for _, g := range anime.Genres {
-						if g.Name != "" {
-							Genres = append(Genres, g.Name)
-						}
-					}
-				}
-				if len(anime.ProductionCompanies) > 0 {
-					for _, p := range anime.ProductionCompanies {
-						if p.Name != "" {
-							Licensors = append(Licensors, p.Name)
-						}
-					}
-				}
-				amimg, _ := server.TMDB.GetTVImages(TMDbID, nil)
-				if err == nil {
-					if amimg != nil {
-						for _, b := range amimg.Backdrops {
-							if b.FilePath != "" {
-								bb, _ := utils.GetBlurHash(server.DecodeIMG+b.FilePath, "")
-								Backdrops = append(Backdrops, models.Image{
-									Height:    b.Height,
-									Width:     b.Width,
-									Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + b.FilePath)),
-									Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w500" + b.FilePath),
-									BlurHash:  bb,
-								})
-							}
-						}
-						for _, p := range amimg.Posters {
-							if p.FilePath != "" {
-								pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
-								Posters = append(Posters, models.Image{
-									Height:    p.Height,
-									Width:     p.Width,
-									Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
-									Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
-									BlurHash:  pp,
-								})
-
-							}
-						}
-					}
-				}
-				tttt, _ := server.TMDB.GetTVVideos(TMDbID, nil)
-				if len(tttt.Results) > 0 {
-					for _, t := range tttt.Results {
-						if strings.Contains(strings.ToLower(t.Site), "youtube") {
-							if t.Key != "" {
-								Trailers = append(Trailers, models.Trailer{
-									Official: true,
-									Host:     "YouTube",
-									Key:      t.Key,
-								})
-							}
-
-						}
-					}
-				}
-			}
-		} else if TMDbID == 0 && PortriatBlurHash == "" && LandscapeBlurHash == "" {
-			querys, _ := server.TMDB.GetSearchMulti(MyAnimeListData.Data.TitleEnglish, nil)
-			if querys != nil {
-				for _, q := range querys.Results {
-					server.LOG.Info().Msgf("query id: %d\n", q.ID)
-					aDate, err := time.Parse(time.DateOnly, AniDBData.Startdate)
-					if err != nil {
-						continue
-					}
-					var qDate time.Time
-					if q.ReleaseDate != "" {
-						qDate, err = time.Parse(time.DateOnly, q.ReleaseDate)
-						if err != nil {
-							continue
-						}
-					} else {
-						qDate, err = time.Parse(time.DateOnly, q.FirstAirDate)
-						if err != nil {
-							continue
-						}
-					}
-
-					if aDate.Year() == qDate.Year() {
-						if strings.Contains(strings.ToLower(q.MediaType), "Serie") {
-							TMDbID = int(q.ID)
-							if OriginalTitle == "" {
-								OriginalTitle = q.OriginalTitle
-							}
-							server.getTMDBPic(q.PosterPath, q.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
-							server.getTMDBRating(TMDbID, &AgeRating)
-							results, _ := server.TMDB.GetGenreTVList(nil)
-							if results != nil {
-								for _, f := range results.Genres {
-									if len(q.GenreIDs) > 0 {
-										for _, h := range q.GenreIDs {
-											if int64(f.ID) == h {
-												Genres = append(Genres, f.Name)
-											}
-										}
-									}
-								}
-							}
-
-							anime, _ := server.TMDB.GetTVDetails(int(q.ID), nil)
-							if len(anime.ProductionCompanies) > 0 {
-								for _, p := range anime.ProductionCompanies {
-									if p.Name != "" {
-										Licensors = append(Licensors, p.Name)
-									}
-								}
-							}
-							amimg, _ := server.TMDB.GetTVImages(TMDbID, nil)
-							if err == nil {
-								if amimg != nil {
-									for _, b := range amimg.Backdrops {
-										if b.FilePath != "" {
-											bb, _ := utils.GetBlurHash(server.DecodeIMG+b.FilePath, "")
-											Backdrops = append(Backdrops, models.Image{
-												Height:    b.Height,
-												Width:     b.Width,
-												Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + b.FilePath)),
-												Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w500" + b.FilePath),
-												BlurHash:  bb,
-											})
-										}
-									}
-									for _, p := range amimg.Posters {
-										if p.FilePath != "" {
-											pp, _ := utils.GetBlurHash(server.DecodeIMG+p.FilePath, "")
-											Posters = append(Posters, models.Image{
-												Height:    p.Height,
-												Width:     p.Width,
-												Image:     strings.TrimSpace(fmt.Sprintf(server.OriginalIMG + p.FilePath)),
-												Thumbnail: strings.TrimSpace("https://image.tmdb.org/t/p/w342" + p.FilePath),
-												BlurHash:  pp,
-											})
-
-										}
-									}
-								}
-							}
-							tttt, _ := server.TMDB.GetTVVideos(TMDbID, nil)
-							if len(tttt.Results) > 0 {
-								for _, t := range tttt.Results {
-									if strings.Contains(strings.ToLower(t.Site), "youtube") {
-										if t.Key != "" {
-											Trailers = append(Trailers, models.Trailer{
-												Official: true,
-												Host:     "YouTube",
-												Key:      t.Key,
-											})
-										}
-
-									}
-								}
-							}
-							break
-						}
-					}
-				}
-			}
-		}
-
-		if TMDbID == 0 && (LandscapePoster == "" || PortriatPoster == "" || PortriatBlurHash == "" || LandscapeBlurHash == "") {
-			server.getMalPic(AniDBData.Picture, MyAnimeListData.Data.Images.Jpg.LargeImageUrl, MyAnimeListData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
-		}
-	*/
 
 	if len(MyAnimeListData.Data.Genres) > 0 {
 		for _, g := range MyAnimeListData.Data.Genres {
@@ -1829,7 +1847,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if MyAnimeListData.Data.Rating == "" {
+	if MyAnimeListData.Data.Rating != "" {
 		AgeRating, err = utils.CleanRating(MyAnimeListData.Data.Rating)
 		if err != nil {
 			AgeRating = ""
@@ -1897,11 +1915,19 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 	AnilistID := server.Anylist(MyAnimeListData.Data.MalId)
 
 	animeData := models.AnimeSerie{
-		SerieMalID:  Query.papaSerieID,
-		SerieName:   Query.papaSerieName,
-		SerieTVDbID: Query.papaSerieTVDbID,
-		SerieTMDbID: Query.papaSerieTMDbID,
-		Aired:       utils.CleanResText(Query.papaSerieAired.Format(time.DateOnly)),
+		SerieMalID:        Query.papaSerieID,
+		SerieName:         Query.papaSerieName,
+		SerieTVDbID:       Query.papaSerieTVDbID,
+		SerieTMDbID:       Query.papaSerieTMDbID,
+		Aired:             utils.CleanResText(Query.papaSerieAired.Format(time.DateOnly)),
+		PortriatPoster:    SeriePortriatPoster,
+		PortriatBlurHash:  SeriePortriatBlurHash,
+		LandscapePoster:   SerieLandscapePoster,
+		LandscapeBlurHash: SerieLandscapeBlurHash,
+		Backdrops:         utils.CleanImages(SerieBackdrops),
+		Posters:           utils.CleanImages(SeriePosters),
+		Logos:             utils.CleanImages(SerieLogos),
+		Trailers:          utils.CleanTrailers(SerieTrailers),
 		Season: models.Season{
 			OriginalTitle:       OriginalTitle,
 			Aired:               Aired.Format(time.DateOnly),
@@ -1909,16 +1935,12 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			Rating:              AgeRating,
 			PortriatPoster:      PortriatPoster,
 			PortriatBlurHash:    PortriatBlurHash,
-			LandscapePoster:     LandscapePoster,
-			LandscapeBlurHash:   LandscapeBlurHash,
 			Genres:              utils.CleanStringArray(Genres),
 			Studios:             utils.CleanDuplicates(utils.CleanStringArray(Studios)),
 			Tags:                utils.CleanStringArray(Tags),
 			ProductionCompanies: utils.CleanDuplicates(PsCs),
 			Titles:              Titles,
-			Backdrops:           Backdrops,
-			Posters:             Posters,
-			Logos:               Logos,
+			Posters:             utils.CleanImages(Posters),
 			Trailers:            utils.CleanTrailers(Trailers),
 			AnimeResources: models.SerieAnimeResources{
 				LivechartID:   LivechartID,
@@ -1957,7 +1979,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			},
 		}
 
-		animeData.AnimeMetas = make([]models.MetaData, len(models.Languages))
+		animeData.Season.AnimeMetas = make([]models.MetaData, len(models.Languages))
 		var newTitle string
 		var newOverview string
 		for i, lang := range models.Languages {
@@ -1985,7 +2007,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 				return
 			}
 
-			animeData.AnimeMetas[i] = models.MetaData{
+			animeData.Season.AnimeMetas[i] = models.MetaData{
 				Language: lang,
 				Meta: models.Meta{
 					Title:    utils.CleanUnicode(newTitle),

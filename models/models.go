@@ -99,8 +99,6 @@ type Season struct {
 	Rating              string              `json:"rating"`
 	PortriatPoster      string              `json:"portriatPoster"`
 	PortriatBlurHash    string              `json:"portriatBlurHash"`
-	LandscapePoster     string              `json:"landscapePoster"`
-	LandscapeBlurHash   string              `json:"landscapeBlurHash"`
 	AnimeResources      SerieAnimeResources `json:"animeResources"`
 	Titles              Titles              `json:"titles"`
 	Genres              []string            `json:"genres"`
@@ -108,17 +106,23 @@ type Season struct {
 	ProductionCompanies []string            `json:"productionCompanies"`
 	Tags                []string            `json:"tags"`
 	Posters             []Image             `json:"posters"`
-	Backdrops           []Image             `json:"backdrops"`
-	Logos               []Image             `json:"logos"`
 	Trailers            []Trailer           `json:"trailers"`
 	AnimeMetas          []MetaData          `json:"animeMetas"`
 }
 
 type AnimeSerie struct {
-	SerieMalID  int    `json:"serieMalID"`
-	SerieName   string `json:"serieName"`
-	SerieTVDbID int    `json:"serieTVDbID"`
-	SerieTMDbID int    `json:"serieTMDbID"`
-	Aired       string `json:"aired"`
-	Season      Season `json:"season"`
+	SerieMalID        int    `json:"serieMalID"`
+	SerieName         string `json:"serieName"`
+	SerieTVDbID       int    `json:"serieTVDbID"`
+	SerieTMDbID       int    `json:"serieTMDbID"`
+	Aired             string `json:"aired"`
+	PortriatPoster    string `json:"portriatPoster"`
+	PortriatBlurHash  string `json:"portriatBlurHash"`
+	LandscapePoster   string `json:"landscapePoster"`
+	LandscapeBlurHash string `json:"landscapeBlurHash"`
+	Posters             []Image             `json:"posters"`
+	Backdrops           []Image             `json:"backdrops"`
+	Logos               []Image             `json:"logos"`
+	Trailers            []Trailer           `json:"trailers"`
+	Season            Season `json:"season"`
 }

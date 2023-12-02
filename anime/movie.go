@@ -854,7 +854,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if malData.Data.Rating == "" {
+	if malData.Data.Rating != "" {
 		AgeRating, err = utils.CleanRating(malData.Data.Rating)
 		if err != nil {
 			AgeRating = ""
@@ -1016,9 +1016,9 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Tags:                utils.CleanStringArray(Tags),
 		ProductionCompanies: utils.CleanDuplicates(PsCs),
 		Titles:              Titles,
-		Backdrops:           Backdrops,
-		Posters:             Posters,
-		Logos:               Logos,
+		Backdrops:           utils.CleanImages(Backdrops),
+		Posters:             utils.CleanImages(Posters),
+		Logos:               utils.CleanImages(Logos),
 		Trailers:            utils.CleanTrailers(Trailers),
 		AnimeResources: models.MovieAnimeResources{
 			LivechartID:   LivechartID,
