@@ -854,13 +854,6 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if malData.Data.Rating != "" {
-		AgeRating, err = utils.CleanRating(malData.Data.Rating)
-		if err != nil {
-			AgeRating = ""
-		}
-	}
-
 	animePlanetByte, err := animeResources.Data.AnimePlanetID.MarshalJSON()
 	if err != nil {
 		AnimePlanetID = ""
@@ -1006,7 +999,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Aired:               Aired.Format(time.DateOnly),
 		Runtime:             Runtime,
 		ReleaseYear:         ReleaseYear,
-		Rating:              AgeRating,
+		Rating:              utils.CleanUnicode(malData.Data.Rating),
 		PortriatPoster:      PortriatPoster,
 		PortriatBlurHash:    PortriatBlurHash,
 		LandscapePoster:     LandscapePoster,
@@ -1049,8 +1042,27 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	server.LOG.Info().Msgf("LandscapePoster: %s", LandscapePoster)
 	server.LOG.Info().Msgf("LandscapeBlurHash: %s", LandscapeBlurHash)
 
-	if malData.Data.TitleEnglish != "" && malData.Data.Synopsis != "" {
-		translation, err := gtranslate.TranslateWithParams(
+	var TTitle string
+	if malData.Data.TitleEnglish != "" {
+		TTitle = malData.Data.TitleEnglish
+	} else {
+		TTitle = malData.Data.Title
+	}
+
+	if TTitle != "" && malData.Data.Synopsis != "" {
+		translationTitle, err := gtranslate.TranslateWithParams(
+			utils.CleanUnicode(TTitle),
+			gtranslate.TranslationParams{
+				From: "auto",
+				To:   "en",
+			},
+		)
+		if err != nil {
+			http.Error(w, fmt.Errorf("error when translate TTitle to default english: %w ", err).Error(), http.StatusInternalServerError)
+			return
+		}
+
+		translationOverview, err := gtranslate.TranslateWithParams(
 			utils.CleanOverview(malData.Data.Synopsis),
 			gtranslate.TranslationParams{
 				From: "auto",
@@ -1065,10 +1077,11 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		metaData := models.MetaData{
 			Language: "en",
 			Meta: models.Meta{
-				Title:    malData.Data.TitleEnglish,
-				Overview: translation,
+				Title:    translationTitle,
+				Overview: translationOverview,
 			},
 		}
+
 
 		animeData.AnimeMetas = make([]models.MetaData, len(models.Languages))
 		var newTitle string

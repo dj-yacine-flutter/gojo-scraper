@@ -308,7 +308,7 @@ func CleanRuntime(input string) string {
 func CleanRating(input string) (string, error) {
 	bracketPattern := regexp.MustCompile(`\([^)]*\)`)
 
-	cleanedText := bracketPattern.ReplaceAllString(input, "")
+	cleanedText := bracketPattern.ReplaceAllString(input, " ")
 
 	cleanedText = strings.TrimSpace(cleanedText)
 	cleanedText = strings.ReplaceAll(cleanedText, " ", "")

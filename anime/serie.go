@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bregydoc/gtranslate"
 	jikan "github.com/darenliang/jikan-go"
 	"github.com/dj-yacine-flutter/gojo-scraper/models"
 	"github.com/dj-yacine-flutter/gojo-scraper/utils"
@@ -46,7 +47,6 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 	var (
 		ReleaseYear            int
-		AgeRating              string
 		PortriatPoster         string
 		PortriatBlurHash       string
 		SeriePortriatPoster    string
@@ -1847,13 +1847,6 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if MyAnimeListData.Data.Rating != "" {
-		AgeRating, err = utils.CleanRating(MyAnimeListData.Data.Rating)
-		if err != nil {
-			AgeRating = ""
-		}
-	}
-
 	animePlanetByte, err := animeResources.Data.AnimePlanetID.MarshalJSON()
 	if err != nil {
 		AnimePlanetID = ""
@@ -1932,7 +1925,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			OriginalTitle:       OriginalTitle,
 			Aired:               Aired.Format(time.DateOnly),
 			ReleaseYear:         ReleaseYear,
-			Rating:              AgeRating,
+			Rating:              utils.CleanUnicode(MyAnimeListData.Data.Rating),
 			PortriatPoster:      PortriatPoster,
 			PortriatBlurHash:    PortriatBlurHash,
 			Genres:              utils.CleanStringArray(Genres),
@@ -1958,8 +1951,27 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		},
 	}
 
-	/* if MyAnimeListData.Data.TitleEnglish != "" && MyAnimeListData.Data.Synopsis != "" {
-		translation, err := gtranslate.TranslateWithParams(
+	var TTitle string
+	if MyAnimeListData.Data.TitleEnglish != "" {
+		TTitle = MyAnimeListData.Data.TitleEnglish
+	} else {
+		TTitle = MyAnimeListData.Data.Title
+	}
+
+	if TTitle != "" && MyAnimeListData.Data.Synopsis != "" {
+		translationTitle, err := gtranslate.TranslateWithParams(
+			utils.CleanUnicode(TTitle),
+			gtranslate.TranslationParams{
+				From: "auto",
+				To:   "en",
+			},
+		)
+		if err != nil {
+			http.Error(w, fmt.Errorf("error when translate TTitle to default english: %w ", err).Error(), http.StatusInternalServerError)
+			return
+		}
+
+		translationOverview, err := gtranslate.TranslateWithParams(
 			utils.CleanOverview(MyAnimeListData.Data.Synopsis),
 			gtranslate.TranslationParams{
 				From: "auto",
@@ -1974,8 +1986,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		metaData := models.MetaData{
 			Language: "en",
 			Meta: models.Meta{
-				Title:    MyAnimeListData.Data.TitleEnglish,
-				Overview: translation,
+				Title:    translationTitle,
+				Overview: translationOverview,
 			},
 		}
 
@@ -2015,7 +2027,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 				},
 			}
 		}
-	} */
+	}
 
 	response, err := json.Marshal(animeData)
 	if err != nil {
