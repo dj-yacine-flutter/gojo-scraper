@@ -1952,23 +1952,30 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 	}
 
 	var TTitle string
+	var enT bool
 	if MyAnimeListData.Data.TitleEnglish != "" {
+		enT = true
 		TTitle = MyAnimeListData.Data.TitleEnglish
 	} else {
 		TTitle = MyAnimeListData.Data.Title
 	}
 
 	if TTitle != "" && MyAnimeListData.Data.Synopsis != "" {
-		translationTitle, err := gtranslate.TranslateWithParams(
-			utils.CleanUnicode(TTitle),
-			gtranslate.TranslationParams{
-				From: "auto",
-				To:   "en",
-			},
-		)
-		if err != nil {
-			http.Error(w, fmt.Errorf("error when translate TTitle to default english: %w ", err).Error(), http.StatusInternalServerError)
-			return
+		var translationTitle string
+		if !enT {
+			translationTitle, err = gtranslate.TranslateWithParams(
+				utils.CleanUnicode(TTitle),
+				gtranslate.TranslationParams{
+					From: "auto",
+					To:   "en",
+				},
+			)
+			if err != nil {
+				http.Error(w, fmt.Errorf("error when translate TTitle to default english: %w ", err).Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			translationTitle = utils.CleanUnicode(TTitle)
 		}
 
 		translationOverview, err := gtranslate.TranslateWithParams(

@@ -1043,23 +1043,30 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	server.LOG.Info().Msgf("LandscapeBlurHash: %s", LandscapeBlurHash)
 
 	var TTitle string
+	var enT bool
 	if malData.Data.TitleEnglish != "" {
+		enT = true
 		TTitle = malData.Data.TitleEnglish
 	} else {
 		TTitle = malData.Data.Title
 	}
 
 	if TTitle != "" && malData.Data.Synopsis != "" {
-		translationTitle, err := gtranslate.TranslateWithParams(
-			utils.CleanUnicode(TTitle),
-			gtranslate.TranslationParams{
-				From: "auto",
-				To:   "en",
-			},
-		)
-		if err != nil {
-			http.Error(w, fmt.Errorf("error when translate TTitle to default english: %w ", err).Error(), http.StatusInternalServerError)
-			return
+		var translationTitle string
+		if !enT {
+			translationTitle, err = gtranslate.TranslateWithParams(
+				utils.CleanUnicode(TTitle),
+				gtranslate.TranslationParams{
+					From: "auto",
+					To:   "en",
+				},
+			)
+			if err != nil {
+				http.Error(w, fmt.Errorf("error when translate TTitle to default english: %w ", err).Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			translationTitle = utils.CleanUnicode(TTitle)
 		}
 
 		translationOverview, err := gtranslate.TranslateWithParams(
@@ -1081,7 +1088,6 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				Overview: translationOverview,
 			},
 		}
-
 
 		animeData.AnimeMetas = make([]models.MetaData, len(models.Languages))
 		var newTitle string
