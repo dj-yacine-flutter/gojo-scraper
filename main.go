@@ -59,6 +59,7 @@ func main() {
 
 	http.HandleFunc("/anime/movie", server.GetAnimeMovie)
 	http.HandleFunc("/anime/serie", server.GetAnimeSerie)
+	http.HandleFunc("/anime/episode", server.GetAnimeEpisode)
 
 	log.Info().Msg("Server is running on port 3333\n")
 	http.ListenAndServe(":3333", nil)

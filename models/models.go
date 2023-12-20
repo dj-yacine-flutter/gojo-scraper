@@ -111,18 +111,29 @@ type Season struct {
 }
 
 type AnimeSerie struct {
-	SerieMalID        int    `json:"serieMalID"`
-	SerieName         string `json:"serieName"`
-	SerieTVDbID       int    `json:"serieTVDbID"`
-	SerieTMDbID       int    `json:"serieTMDbID"`
-	Aired             string `json:"aired"`
-	PortriatPoster    string `json:"portriatPoster"`
-	PortriatBlurHash  string `json:"portriatBlurHash"`
-	LandscapePoster   string `json:"landscapePoster"`
-	LandscapeBlurHash string `json:"landscapeBlurHash"`
-	Posters             []Image             `json:"posters"`
-	Backdrops           []Image             `json:"backdrops"`
-	Logos               []Image             `json:"logos"`
-	Trailers            []Trailer           `json:"trailers"`
-	Season            Season `json:"season"`
+	SerieMalID        int       `json:"serieMalID"`
+	SerieName         string    `json:"serieName"`
+	SerieTVDbID       int       `json:"serieTVDbID"`
+	SerieTMDbID       int       `json:"serieTMDbID"`
+	Aired             string    `json:"aired"`
+	PortriatPoster    string    `json:"portriatPoster"`
+	PortriatBlurHash  string    `json:"portriatBlurHash"`
+	LandscapePoster   string    `json:"landscapePoster"`
+	LandscapeBlurHash string    `json:"landscapeBlurHash"`
+	Posters           []Image   `json:"posters"`
+	Backdrops         []Image   `json:"backdrops"`
+	Logos             []Image   `json:"logos"`
+	Trailers          []Trailer `json:"trailers"`
+	Season            Season    `json:"season"`
+}
+
+type AnimeEpisode struct {
+	OriginalTitle      string     `json:"originalTitle"`
+	Aired              string     `json:"aired"`
+	Rating             string     `json:"rating"`
+	Runtime            string     `json:"runtime"`
+	EpisodeNumber      uint       `json:"episodeNumber"`
+	ThumbnailsPoster   string     `json:"thumbnailsPoster"`
+	ThumbnailsBlurHash string     `json:"thumbnailsBlurHash"`
+	EpisodeMetas       []MetaData `json:"episodeMetas"`
 }
