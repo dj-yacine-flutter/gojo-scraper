@@ -31,8 +31,8 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	var (
 		ReleaseYear       int
 		AgeRating         string
-		PortriatPoster    string
-		PortriatBlurHash  string
+		PortraitPoster    string
+		PortraitBlurHash  string
 		LandscapePoster   string
 		LandscapeBlurHash string
 		AnimePlanetID     string
@@ -102,7 +102,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		IMDbID = animeResources.Data.IMDbID
 	}
 
-	server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.LargeImageUrl, malData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster)
+	server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.LargeImageUrl, malData.Data.Images.Webp.LargeImageUrl, &PortraitBlurHash, &PortraitPoster)
 
 	if malData.Data.TitleJapanese != "" {
 		OriginalTitle = malData.Data.TitleJapanese
@@ -493,7 +493,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 			TMDbID = l
 			anime, err := server.TMDB.GetMovieDetails(TMDbID, nil)
 			if err != nil {
-				PortriatBlurHash = ""
+				PortraitBlurHash = ""
 				LandscapeBlurHash = ""
 				TMDbID = 0
 			} else {
@@ -501,7 +501,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				if anime.ReleaseDate != "" {
 					eDate, err := time.Parse(time.DateOnly, anime.ReleaseDate)
 					if err != nil {
-						PortriatBlurHash = ""
+						PortraitBlurHash = ""
 						LandscapeBlurHash = ""
 						TMDbID = 0
 					}
@@ -513,7 +513,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				} else {
 					newAnime, err := server.TMDB.GetMovieReleaseDates(TMDbID)
 					if err != nil {
-						PortriatBlurHash = ""
+						PortraitBlurHash = ""
 						LandscapeBlurHash = ""
 						TMDbID = 0
 					}
@@ -536,7 +536,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 								}
 							}
 						} else {
-							PortriatBlurHash = ""
+							PortraitBlurHash = ""
 							LandscapeBlurHash = ""
 							TMDbID = 0
 						}
@@ -550,7 +550,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 					}
 					TMDBRuntime = fmt.Sprintf("%dm", anime.Runtime)
 					TMDBTitle = anime.Title
-					server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
+					server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortraitBlurHash, &PortraitPoster, &LandscapeBlurHash, &LandscapePoster)
 					server.getTMDBRating(TMDbID, &AgeRating)
 					if len(anime.Genres) > 0 {
 						for _, g := range anime.Genres {
@@ -629,13 +629,13 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if TMDbID != 0 && PortriatBlurHash == "" && LandscapeBlurHash == "" {
+	if TMDbID != 0 && PortraitBlurHash == "" && LandscapeBlurHash == "" {
 		anime, _ := server.TMDB.GetMovieDetails(TMDbID, nil)
 		if anime != nil {
 			OriginalTitle = anime.OriginalTitle
 			TMDBTitle = anime.Title
 			TMDBRuntime = fmt.Sprintf("%dm", anime.Runtime)
-			server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
+			server.getTMDBPic(anime.PosterPath, anime.BackdropPath, &PortraitBlurHash, &PortraitPoster, &LandscapeBlurHash, &LandscapePoster)
 			server.getTMDBRating(TMDbID, &AgeRating)
 			if len(anime.Genres) > 0 {
 				for _, g := range anime.Genres {
@@ -709,7 +709,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 				}
 			}
 		}
-	} else if TMDbID == 0 && PortriatBlurHash == "" && LandscapeBlurHash == "" {
+	} else if TMDbID == 0 && PortraitBlurHash == "" && LandscapeBlurHash == "" {
 		querys, _ := server.TMDB.GetSearchMulti(malData.Data.TitleEnglish, nil)
 		if querys != nil {
 			for _, q := range querys.Results {
@@ -737,7 +737,7 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 						if OriginalTitle == "" {
 							OriginalTitle = q.OriginalTitle
 						}
-						server.getTMDBPic(q.PosterPath, q.BackdropPath, &PortriatBlurHash, &PortriatPoster, &LandscapeBlurHash, &LandscapePoster)
+						server.getTMDBPic(q.PosterPath, q.BackdropPath, &PortraitBlurHash, &PortraitPoster, &LandscapeBlurHash, &LandscapePoster)
 						server.getTMDBRating(TMDbID, &AgeRating)
 						results, _ := server.TMDB.GetGenreMovieList(nil)
 						if results != nil {
@@ -824,8 +824,8 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if TMDbID == 0 && (LandscapePoster == "" || PortriatPoster == "" || PortriatBlurHash == "" || LandscapeBlurHash == "") {
-		server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.LargeImageUrl, malData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster)
+	if TMDbID == 0 && (LandscapePoster == "" || PortraitPoster == "" || PortraitBlurHash == "" || LandscapeBlurHash == "") {
+		server.getMalPic(AniDBData.Picture, malData.Data.Images.Jpg.LargeImageUrl, malData.Data.Images.Webp.LargeImageUrl, &PortraitBlurHash, &PortraitPoster)
 	}
 
 	if len(malData.Data.Genres) > 0 {
@@ -1000,8 +1000,8 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 		Runtime:             Runtime,
 		ReleaseYear:         ReleaseYear,
 		Rating:              utils.CleanUnicode(malData.Data.Rating),
-		PortriatPoster:      PortriatPoster,
-		PortriatBlurHash:    PortriatBlurHash,
+		PortraitPoster:      PortraitPoster,
+		PortraitBlurHash:    PortraitBlurHash,
 		LandscapePoster:     LandscapePoster,
 		LandscapeBlurHash:   LandscapeBlurHash,
 		Genres:              utils.CleanStringArray(Genres),
@@ -1037,8 +1037,8 @@ func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request
 	server.LOG.Info().Msgf("AniDB Episodes: %d", len(AniDBData.Episodes.Episode))
 	server.LOG.Info().Msgf("OriginalTitle: %s", OriginalTitle)
 	server.LOG.Info().Msgf("ReleaseYear: %d", ReleaseYear)
-	server.LOG.Info().Msgf("PortriatPoster: %s", PortriatPoster)
-	server.LOG.Info().Msgf("PortriatBlurHash: %s", PortriatBlurHash)
+	server.LOG.Info().Msgf("PortraitPoster: %s", PortraitPoster)
+	server.LOG.Info().Msgf("PortraitBlurHash: %s", PortraitBlurHash)
 	server.LOG.Info().Msgf("LandscapePoster: %s", LandscapePoster)
 	server.LOG.Info().Msgf("LandscapeBlurHash: %s", LandscapeBlurHash)
 

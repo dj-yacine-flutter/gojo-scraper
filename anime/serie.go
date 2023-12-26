@@ -47,10 +47,10 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 	var (
 		ReleaseYear            int
-		PortriatPoster         string
-		PortriatBlurHash       string
-		SeriePortriatPoster    string
-		SeriePortriatBlurHash  string
+		PortraitPoster         string
+		PortraitBlurHash       string
+		SeriePortraitPoster    string
+		SeriePortraitBlurHash  string
 		SerieLandscapePoster   string
 		SerieLandscapeBlurHash string
 		AnimePlanetID          string
@@ -231,7 +231,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	server.getMalPic(AniDBData.Picture, MyAnimeListData.Data.Images.Jpg.LargeImageUrl, MyAnimeListData.Data.Images.Webp.LargeImageUrl, &PortriatBlurHash, &PortriatPoster)
+	server.getMalPic(AniDBData.Picture, MyAnimeListData.Data.Images.Jpg.LargeImageUrl, MyAnimeListData.Data.Images.Webp.LargeImageUrl, &PortraitBlurHash, &PortraitPoster)
 
 	if MyAnimeListData.Data.TitleEnglish != "" {
 		OriginalTitle = MyAnimeListData.Data.TitleEnglish
@@ -1446,7 +1446,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 						if Query.papaSerieAired.Year() == fair.Year() {
 							Query.papaSerieTMDbID = int(s.ID)
-							server.getTMDBPic(s.PosterPath, s.BackdropPath, &SeriePortriatBlurHash, &SeriePortriatPoster, &SerieLandscapeBlurHash, &SerieLandscapePoster)
+							server.getTMDBPic(s.PosterPath, s.BackdropPath, &SeriePortraitBlurHash, &SeriePortraitPoster, &SerieLandscapeBlurHash, &SerieLandscapePoster)
 
 							samimg, _ := server.TMDB.GetTVImages(int(s.ID), nil)
 							if err == nil {
@@ -1540,7 +1540,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 									}
 								}
 
-								server.getTMDBPic(s.PosterPath, "", &PortriatBlurHash, &PortriatPoster, nil, nil)
+								server.getTMDBPic(s.PosterPath, "", &PortraitBlurHash, &PortraitPoster, nil, nil)
 
 								tttt, _ := server.TMDB.GetTVSeasonVideos(Query.papaSerieTMDbID, s.SeasonNumber, nil)
 								if tttt != nil {
@@ -1638,7 +1638,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 										}
 									}
 								}
-								//server.getTMDBPic(s.PosterPath, s.BackdropPath, &SeriePortriatBlurHash, &SeriePortriatPoster, &SerieLandscapeBlurHash, &SerieLandscapePoster)
+								//server.getTMDBPic(s.PosterPath, s.BackdropPath, &SeriePortraitBlurHash, &SeriePortraitPoster, &SerieLandscapeBlurHash, &SerieLandscapePoster)
 
 								amimg, _ := server.TMDB.GetTVSeasonImages(int(s.ShowID), s.SeasonNumber, nil)
 								if amimg != nil {
@@ -1659,7 +1659,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 
 								anime, _ := server.TMDB.GetTVSeasonDetails(int(s.ShowID), s.SeasonNumber, nil)
 								if anime != nil {
-									server.getTMDBPic(anime.PosterPath, "", &PortriatBlurHash, &PortriatPoster, nil, nil)
+									server.getTMDBPic(anime.PosterPath, "", &PortraitBlurHash, &PortraitPoster, nil, nil)
 								}
 
 								tttt, _ := server.TMDB.GetTVSeasonVideos(int(s.ShowID), s.SeasonNumber, nil)
@@ -1769,7 +1769,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 												}
 											}
 										}
-										server.getTMDBPic(q.PosterPath, q.BackdropPath, &SeriePortriatBlurHash, &SeriePortriatPoster, &SerieLandscapeBlurHash, &SerieLandscapePoster)
+										server.getTMDBPic(q.PosterPath, q.BackdropPath, &SeriePortraitBlurHash, &SeriePortraitPoster, &SerieLandscapeBlurHash, &SerieLandscapePoster)
 										Query.papaSerieAired = fair
 
 										amimg, _ := server.TMDB.GetTVSeasonImages(int(q.ID), s.SeasonNumber, nil)
@@ -1789,7 +1789,7 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 											}
 										}
 
-										server.getTMDBPic(s.PosterPath, "", &PortriatBlurHash, &PortriatPoster, nil, nil)
+										server.getTMDBPic(s.PosterPath, "", &PortraitBlurHash, &PortraitPoster, nil, nil)
 
 										tttt, _ := server.TMDB.GetTVSeasonVideos(int(q.ID), s.SeasonNumber, nil)
 										if tttt != nil {
@@ -1913,8 +1913,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 		SerieTVDbID:       Query.papaSerieTVDbID,
 		SerieTMDbID:       Query.papaSerieTMDbID,
 		Aired:             utils.CleanResText(Query.papaSerieAired.Format(time.DateOnly)),
-		PortriatPoster:    SeriePortriatPoster,
-		PortriatBlurHash:  SeriePortriatBlurHash,
+		PortraitPoster:    SeriePortraitPoster,
+		PortraitBlurHash:  SeriePortraitBlurHash,
 		LandscapePoster:   SerieLandscapePoster,
 		LandscapeBlurHash: SerieLandscapeBlurHash,
 		Backdrops:         utils.CleanImages(SerieBackdrops),
@@ -1926,8 +1926,8 @@ func (server *AnimeScraper) GetAnimeSerie(w http.ResponseWriter, r *http.Request
 			Aired:               Aired.Format(time.DateOnly),
 			ReleaseYear:         ReleaseYear,
 			Rating:              utils.CleanUnicode(MyAnimeListData.Data.Rating),
-			PortriatPoster:      PortriatPoster,
-			PortriatBlurHash:    PortriatBlurHash,
+			PortraitPoster:      PortraitPoster,
+			PortraitBlurHash:    PortraitBlurHash,
 			Genres:              utils.CleanStringArray(Genres),
 			Studios:             utils.CleanDuplicates(utils.CleanStringArray(Studios)),
 			Tags:                utils.CleanStringArray(Tags),

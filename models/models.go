@@ -61,8 +61,8 @@ type AnimeMovie struct {
 	ReleaseYear         int                 `json:"releaseYear"`
 	Rating              string              `json:"rating"`
 	Runtime             string              `json:"runtime"`
-	PortriatPoster      string              `json:"portriatPoster"`
-	PortriatBlurHash    string              `json:"portriatBlurHash"`
+	PortraitPoster      string              `json:"portraitPoster"`
+	PortraitBlurHash    string              `json:"portraitBlurHash"`
 	LandscapePoster     string              `json:"landscapePoster"`
 	LandscapeBlurHash   string              `json:"landscapeBlurHash"`
 	AnimeResources      MovieAnimeResources `json:"animeResources"`
@@ -93,12 +93,12 @@ type SerieAnimeResources struct {
 }
 
 type Season struct {
-	OriginalTitle       string              `json:"originalTitle"`
+	OriginalTitle       string              `json:"seasonOriginalTitle"`
 	Aired               string              `json:"aired"`
 	ReleaseYear         int                 `json:"releaseYear"`
 	Rating              string              `json:"rating"`
-	PortriatPoster      string              `json:"portriatPoster"`
-	PortriatBlurHash    string              `json:"portriatBlurHash"`
+	PortraitPoster      string              `json:"portraitPoster"`
+	PortraitBlurHash    string              `json:"portraitBlurHash"`
 	AnimeResources      SerieAnimeResources `json:"animeResources"`
 	Titles              Titles              `json:"titles"`
 	Genres              []string            `json:"genres"`
@@ -116,8 +116,8 @@ type AnimeSerie struct {
 	SerieTVDbID       int       `json:"serieTVDbID"`
 	SerieTMDbID       int       `json:"serieTMDbID"`
 	Aired             string    `json:"aired"`
-	PortriatPoster    string    `json:"portriatPoster"`
-	PortriatBlurHash  string    `json:"portriatBlurHash"`
+	PortraitPoster    string    `json:"portraitPoster"`
+	PortraitBlurHash  string    `json:"portraitBlurHash"`
 	LandscapePoster   string    `json:"landscapePoster"`
 	LandscapeBlurHash string    `json:"landscapeBlurHash"`
 	Posters           []Image   `json:"posters"`
@@ -128,7 +128,7 @@ type AnimeSerie struct {
 }
 
 type AnimeEpisode struct {
-	OriginalTitle      string     `json:"originalTitle"`
+	OriginalTitle      string     `json:"episodeOriginalTitle"`
 	Aired              string     `json:"aired"`
 	Rating             string     `json:"rating"`
 	Runtime            string     `json:"runtime"`
