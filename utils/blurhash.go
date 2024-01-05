@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/buckket/go-blurhash"
+	"github.com/nfnt/resize"
 )
 
 func GetBlurHash(base, path string) (string, error) {
@@ -32,7 +33,9 @@ func GetBlurHash(base, path string) (string, error) {
 		return "", err
 	}
 
-	blurHash, err := blurhash.Encode(4, 3, img)
+	m := resize.Resize(500, 250, img, resize.Lanczos3)
+
+	blurHash, err := blurhash.Encode(4, 3, m)
 	if err != nil {
 		return "", err
 	}
