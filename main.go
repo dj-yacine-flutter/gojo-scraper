@@ -58,9 +58,14 @@ func main() {
 	}
 
 	http.HandleFunc("/anime/movie", server.GetAnimeMovie)
+	http.HandleFunc("/anime/iframe/movie", server.GetAnimeMovieIframes)
 	http.HandleFunc("/anime/serie", server.GetAnimeSerie)
+	http.HandleFunc("/anime/iframe/serie", server.GetAnimeSerieIframes)
 	http.HandleFunc("/anime/episode", server.GetAnimeEpisode)
 
-	log.Info().Msg("Server is running on port 3333\n")
-	http.ListenAndServe(":3333", nil)
+	log.Info().Msg("Server is running on port 3333")
+	err = http.ListenAndServe(":3333", nil)
+	if err != nil {
+		log.Err(err).Msg("cannot start the server")
+	}
 }
