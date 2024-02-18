@@ -228,10 +228,10 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 			}
 
 			Iframes = append(Iframes, models.Iframe{
-				Link:      url,
-				Authority: "",
-				Referer:   "",
-				Quality:   quality,
+				Link:    url,
+				Type:    "sub",
+				Referer: "",
+				Quality: quality,
 			})
 		}
 	})
