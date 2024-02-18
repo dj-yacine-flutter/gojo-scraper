@@ -137,3 +137,33 @@ type AnimeEpisode struct {
 	ThumbnailsBlurHash string     `json:"thumbnailsBlurHash"`
 	EpisodeMetas       []MetaData `json:"episodeMetas"`
 }
+
+type Torrent struct {
+	Name     string `json:"name"`
+	InfoHash string `json:"info_hash"`
+	Leechers string `json:"leechers"`
+	Seeders  string `json:"seeders"`
+	Size     string `json:"size"`
+}
+
+type PirateBayData struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	InfoHash string `json:"info_hash"`
+	Leechers string `json:"leechers"`
+	Seeders  string `json:"seeders"`
+	NumFiles string `json:"num_files"`
+	Size     string `json:"size"`
+	Username string `json:"username"`
+	Added    string `json:"added"`
+	Status   string `json:"status"`
+	Category string `json:"category"`
+	Imdb     string `json:"imdb"`
+}
+
+type Iframe struct {
+	Link      string `json:"link"`
+	Referer   string `json:"referer"`
+	Authority string `json:"authority"`
+	Quality   string `json:"quality"`
+}
