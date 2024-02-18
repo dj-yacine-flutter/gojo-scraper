@@ -18,13 +18,13 @@ import (
 func (server *AnimeScraper) GetAnimeMovie(w http.ResponseWriter, r *http.Request) {
 	mal := r.URL.Query().Get("mal")
 	if mal == "" {
-		http.Error(w, "Please provide an 'mal' parservereter", http.StatusBadRequest)
+		http.Error(w, "Please provide an 'mal' query", http.StatusBadRequest)
 		return
 	}
 
 	id, err := strconv.Atoi(mal)
 	if err != nil {
-		http.Error(w, "provide a valid 'mal'", http.StatusInternalServerError)
+		http.Error(w, "provide a valid 'mal' id", http.StatusInternalServerError)
 		return
 	}
 
