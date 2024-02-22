@@ -48,12 +48,15 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 		}
 
 		if strings.Contains(utils.CleanTitle(a.Text()), utils.CleanTitle(title)) {
-			yt := s.Find(".fd-infor")
-			if strings.Contains(yt.Text(), fmt.Sprint(year)) {
-				href, ok := a.Attr("href")
-				if ok {
-					pages = append(pages, strings.TrimSpace(root+href))
+			if isMovie {
+				yt := s.Find(".fd-infor")
+				if !strings.Contains(yt.Text(), fmt.Sprint(year)) {
+					return
 				}
+			}
+			href, ok := a.Attr("href")
+			if ok {
+				pages = append(pages, strings.TrimSpace(root+href))
 			}
 		}
 	})
@@ -69,6 +72,17 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 		doc2, err := goquery.NewDocumentFromReader(resp2.Body)
 		if err != nil {
 			continue
+		}
+
+		if !isMovie {
+			prm := doc2.Find("div.anisc-info")
+			if prm == nil {
+				continue
+			}
+
+			if !strings.Contains(prm.Text(), fmt.Sprint(year)) {
+				continue
+			}
 		}
 
 		stats := doc2.Find(".film-stats")
