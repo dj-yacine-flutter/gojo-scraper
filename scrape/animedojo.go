@@ -209,7 +209,7 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 				}
 
 				href, ok := a.Attr("href")
-				if ok {
+				if ok && href != "" {
 					iframes = append(iframes, models.Iframe{
 						Link:    href,
 						Quality: "hd",

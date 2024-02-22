@@ -219,7 +219,7 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 		}
 
 		url, ok := a.Attr("data-ep-url")
-		if ok {
+		if ok && url != "" {
 			var quality string
 
 			small := a.Find("small")
@@ -236,10 +236,9 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 		}
 	})
 
-
 	if len(iframes) == 0 {
 		return nil, errors.New("no iframes found")
 	}
-	
+
 	return iframes, nil
 }
