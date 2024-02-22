@@ -221,5 +221,9 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 		}
 	}
 
+	if len(iframes) == 0 {
+		return nil, errors.New("no iframe found")
+	}
+
 	return iframes, nil
 }

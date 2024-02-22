@@ -211,7 +211,7 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 		return nil, errors.New("no data found")
 	}
 
-	var Iframes []models.Iframe
+	var iframes []models.Iframe
 	watch.Find("li").Each(func(i int, s *goquery.Selection) {
 		a := s.Find("a")
 		if a == nil {
@@ -227,7 +227,7 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 				quality = small.Text()
 			}
 
-			Iframes = append(Iframes, models.Iframe{
+			iframes = append(iframes, models.Iframe{
 				Link:    url,
 				Type:    "sub",
 				Referer: "",
@@ -236,5 +236,10 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 		}
 	})
 
-	return Iframes, nil
+
+	if len(iframes) == 0 {
+		return nil, errors.New("no iframes found")
+	}
+	
+	return iframes, nil
 }

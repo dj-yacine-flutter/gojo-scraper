@@ -224,7 +224,7 @@ func (s *Scraper) AnimeRco(title string, isMovie bool, malID, year, ep int) ([]m
 					frm := ifr.Find("iframe")
 					if frm != nil {
 						src, ok := frm.Attr("src")
-						if ok {
+						if ok && src != "" {
 							embed = strings.ReplaceAll(src, "/\\", "/")
 							embed = strings.ReplaceAll(embed, "https:", "")
 							embed = strings.ReplaceAll(embed, "http:", "")
@@ -236,7 +236,6 @@ func (s *Scraper) AnimeRco(title string, isMovie bool, malID, year, ep int) ([]m
 				if embed != "" {
 					iframes = append(iframes, models.Iframe{
 						Link:    strings.ReplaceAll(embed, "/\\", "/"),
-						Referer: "",
 						Type:    "sub",
 						Quality: "hd",
 					})
