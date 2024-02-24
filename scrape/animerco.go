@@ -238,6 +238,7 @@ func (s *Scraper) AnimeRco(title string, isMovie bool, malID, year, ep int) ([]m
 						Link:    strings.ReplaceAll(embed, "/\\", "/"),
 						Type:    "sub",
 						Quality: "hd",
+						Language: "ara",
 					})
 				}
 

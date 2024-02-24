@@ -150,10 +150,11 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 				href, ok := a.Attr("href")
 				if ok {
 					iframes = append(iframes, models.Iframe{
-						Link:    href,
-						Quality: "hd",
-						Referer: strings.TrimSpace(k),
-						Type:    strings.ToLower(v),
+						Link:     href,
+						Quality:  "hd",
+						Referer:  strings.TrimSpace(k),
+						Type:     strings.ToLower(v),
+						Language: "en",
 					})
 				}
 			})
@@ -211,10 +212,11 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 				href, ok := a.Attr("href")
 				if ok && href != "" {
 					iframes = append(iframes, models.Iframe{
-						Link:    href,
-						Quality: "hd",
-						Referer: strings.TrimSpace(url),
-						Type:    strings.ToLower(v),
+						Link:     href,
+						Quality:  "hd",
+						Referer:  strings.TrimSpace(url),
+						Type:     strings.ToLower(v),
+						Language: "en",
 					})
 				}
 			})

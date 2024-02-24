@@ -229,6 +229,7 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 						Link:    string(frm),
 						Type:    "sub",
 						Quality: "hd",
+						Language: "ara",
 					})
 				}
 			}

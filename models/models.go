@@ -162,8 +162,9 @@ type PirateBayData struct {
 }
 
 type Iframe struct {
-	Link    string `json:"link"`
-	Referer string `json:"referer"`
-	Type    string `json:"type"`
-	Quality string `json:"quality"`
+	Link     string `json:"link"`
+	Referer  string `json:"referer"`
+	Type     string `json:"type"`
+	Quality  string `json:"quality"`
+	Language string `json:"language"`
 }

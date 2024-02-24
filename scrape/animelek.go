@@ -232,6 +232,7 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 				Type:    "sub",
 				Referer: "",
 				Quality: quality,
+				Language: "ara",
 			})
 		}
 	})

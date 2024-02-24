@@ -249,6 +249,7 @@ func (s *Scraper) WitAnime(title string, isMovie bool, malID, year, ep int) ([]m
 							Link:    url,
 							Type:    "sub",
 							Quality: "hd",
+							Language: "ara",
 						})
 					}
 				}
