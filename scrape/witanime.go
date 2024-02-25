@@ -231,6 +231,7 @@ func (s *Scraper) WitAnime(title string, isMovie bool, malID, year, ep int) ([]m
 									m := models.Iframe{
 										Link: frame,
 										Type: "sub",
+										Language: "ara",
 									}
 
 									p := s.Find("p").Text()
