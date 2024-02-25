@@ -223,7 +223,6 @@ func (s *Scraper) AnimeUnity(name string, isMovie bool, malID, year, ep int) ([]
 
 		eps, ok := player.Attr("episodes")
 		if ok {
-			//fmt.Println(eps)
 			if eps != "" {
 				eps = strings.ReplaceAll(eps, "&quot;", "\"")
 				var code []animeUnityFrame

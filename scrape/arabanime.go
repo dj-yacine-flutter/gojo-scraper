@@ -225,10 +225,14 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 				}
 
 				if len(frm) != 0 {
+					src = strings.ReplaceAll(string(frm), "/\\", "/")
+					src = strings.ReplaceAll(src, "https:", "")
+					src = strings.ReplaceAll(src, "http:", "")
+					src = strings.Replace(src, "//", "https://", 1)
 					iframes = append(iframes, models.Iframe{
-						Link:    string(frm),
-						Type:    "sub",
-						Quality: "hd",
+						Link:     src,
+						Type:     "sub",
+						Quality:  "hd",
 						Language: "ara",
 					})
 				}
@@ -239,6 +243,8 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 	if len(iframes) == 0 {
 		return nil, errors.New("no data found")
 	}
+
+	fmt.Println(iframes)
 
 	return iframes, nil
 }
