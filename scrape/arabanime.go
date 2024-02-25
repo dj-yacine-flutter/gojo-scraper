@@ -244,7 +244,5 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 		return nil, errors.New("no data found")
 	}
 
-	fmt.Println(iframes)
-
 	return iframes, nil
 }
