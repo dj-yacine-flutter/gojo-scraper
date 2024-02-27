@@ -155,6 +155,10 @@ func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]mo
 		})
 	}
 
+	if len(links) == 0 {
+		return nil, errors.New("no data found")
+	}
+
 	var pages []struct {
 		path string
 		dub  bool
@@ -231,6 +235,10 @@ func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]mo
 		})
 	}
 
+	if len(pages) == 0 {
+		return nil, errors.New("no data found")
+	}
+
 	var iframes []models.Iframe
 	for _, v := range pages {
 		resp4, err := http.Get(fmt.Sprintf("https://gogoanime3.co%s", strings.TrimSpace(v.path)))
@@ -278,6 +286,10 @@ func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]mo
 				})
 			}
 		})
+	}
+
+	if len(iframes) == 0 {
+		return nil, errors.New("no data found")
 	}
 
 	return iframes, nil
