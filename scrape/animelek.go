@@ -202,7 +202,7 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 	}
 
 	content4 := doc4.Find(".tab-content")
-	if content == nil {
+	if content4 == nil {
 		return nil, errors.New("no data found")
 	}
 
@@ -228,10 +228,9 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 			}
 
 			iframes = append(iframes, models.Iframe{
-				Link:    url,
-				Type:    "sub",
-				Referer: "",
-				Quality: quality,
+				Link:     url,
+				Type:     "sub",
+				Quality:  quality,
 				Language: "ara",
 			})
 		}
