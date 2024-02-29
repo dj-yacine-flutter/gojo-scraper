@@ -3,10 +3,10 @@ module github.com/dj-yacine-flutter/gojo-scraper
 go 1.22.0
 
 require (
-	github.com/PuerkitoBio/goquery v1.8.1
+	github.com/PuerkitoBio/goquery v1.9.0
 	github.com/bregydoc/gtranslate v0.0.0-20200913051839-1bd07f6c1fc5
 	github.com/buckket/go-blurhash v1.1.0
-	github.com/cyruzin/golang-tmdb v1.5.7
+	github.com/cyruzin/golang-tmdb v1.5.8
 	github.com/darenliang/jikan-go v1.2.3
 )
 
