@@ -23,53 +23,6 @@ type animeSaturnSearch []struct {
 func (s *Scraper) AnimeSaturn(title string, isMovie bool, malID, year, ep int) ([]models.Iframe, error) {
 	var err error
 
-	/* 	req, err := http.NewRequest(http.MethodGet, "https://www.animesaturn.tv", nil)
-	   	if err != nil {
-	   		return nil, errors.New("cannot make request")
-	   	}
-
-	   	req.Header.Add("Connection", "keep-alive")
-	   	req.Header.Add("Referer", "https://www.animesaturn.tv/")
-	   	req.Header.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
-
-	   	resp, err := http.DefaultClient.Do(req)
-	   	if err != nil {
-	   		return nil, errors.New("cannot GET response")
-	   	}
-	   	defer resp.Body.Close()
-
-
-	   	b1, _ := io.ReadAll(resp.Body)
-
-	   	fmt.Println(string(b1))
-	   	fmt.Println(resp.StatusCode)
-	   	fmt.Println(resp.Status)
-	   	//if resp.StatusCode != 200 {
-	   	//	return nil, errors.New("1- StatusCode != 200 ")
-	   	//}
-
-	   	var (
-	   		as1 string
-	   		as2 string
-	   		php string
-	   	)
-
-	   	for _, v := range resp.Cookies() {
-	   		fmt.Println(v.Raw)
-	   		if strings.Contains(strings.ToLower(v.Name), "astest-es") {
-	   			as1 = v.Value
-	   			continue
-	   		}
-	   		if strings.Contains(strings.ToLower(v.Name), "astest-2v") {
-	   			as2 = v.Value
-	   			continue
-	   		}
-	   		if strings.Contains(strings.ToUpper(v.Name), "PHPSESSID") {
-	   			php = v.Value
-	   			continue
-	   		}
-	   	} */
-
 	req2, err := http.NewRequest(http.MethodPost, fmt.Sprintf("https://www.animesaturn.tv/index.php?search=1&key=%s&d=1", title), nil)
 	if err != nil {
 		return nil, errors.New("cannot make request")
@@ -88,7 +41,7 @@ func (s *Scraper) AnimeSaturn(title string, isMovie bool, malID, year, ep int) (
 	defer resp2.Body.Close()
 
 	if resp2.StatusCode != 200 {
-		return nil, errors.New("2- StatusCode != 200 ")
+		return nil, ErrNotOK
 	}
 
 	var result animeSaturnSearch
@@ -96,6 +49,10 @@ func (s *Scraper) AnimeSaturn(title string, isMovie bool, malID, year, ep int) (
 	if err != nil {
 		log.Fatal(err)
 		return nil, errors.New("cannot parse search result")
+	}
+
+	if len(result) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var pages []string
@@ -108,7 +65,7 @@ func (s *Scraper) AnimeSaturn(title string, isMovie bool, malID, year, ep int) (
 	}
 
 	if len(pages) == 0 {
-		return nil, errors.New("no results found")
+		return nil, ErrNoDataFound
 	}
 
 	re := regexp.MustCompile(`\d+`)
@@ -184,7 +141,7 @@ func (s *Scraper) AnimeSaturn(title string, isMovie bool, malID, year, ep int) (
 	}
 
 	if len(links) == 0 {
-		return nil, errors.New("no links found")
+		return nil, ErrNoDataFound
 	}
 
 	var watchers []struct {
@@ -227,6 +184,10 @@ func (s *Scraper) AnimeSaturn(title string, isMovie bool, malID, year, ep int) (
 			}
 		})
 
+	}
+
+	if len(watchers) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var embeds []struct {
@@ -276,7 +237,7 @@ func (s *Scraper) AnimeSaturn(title string, isMovie bool, malID, year, ep int) (
 	}
 
 	if len(embeds) == 0 {
-		return nil, errors.New("no embeds found")
+		return nil, ErrNoDataFound
 	}
 
 	var iframes []models.Iframe
@@ -328,6 +289,10 @@ func (s *Scraper) AnimeSaturn(title string, isMovie bool, malID, year, ep int) (
 			}
 
 		}
+	}
+
+	if len(iframes) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil

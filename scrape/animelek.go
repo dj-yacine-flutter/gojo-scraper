@@ -1,7 +1,6 @@
 package scrape
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -22,7 +21,7 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("status code not 200")
+		return nil, ErrNotOK
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
@@ -32,11 +31,10 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 
 	content := doc.Find(".anime-list-content")
 	if content == nil {
-		return nil, errors.New("no result found")
+		return nil, ErrNoDataFound
 	}
 
 	var paths []string
-
 	content.Find(".anime-card-container").Each(func(i int, s *goquery.Selection) {
 		details := s.Find(".anime-card-details")
 		if details == nil {
@@ -63,6 +61,10 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 			}
 		}
 	})
+
+	if len(paths) == 0 {
+		return nil, ErrNoDataFound
+	}
 
 	var (
 		url   string
@@ -134,7 +136,7 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 	}
 
 	if url == "" {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	resp3, err := http.Get(url)
@@ -183,7 +185,7 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 	})
 
 	if page == "" {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	resp4, err := http.Get(page)
@@ -203,12 +205,12 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 
 	content4 := doc4.Find(".tab-content")
 	if content4 == nil {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	watch := content4.Find("#watch")
 	if watch == nil {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	var iframes []models.Iframe
@@ -237,7 +239,7 @@ func (s *Scraper) AnimeLek(title string, isMovie bool, malID, year, ep int) ([]m
 	})
 
 	if len(iframes) == 0 {
-		return nil, errors.New("no iframes found")
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil

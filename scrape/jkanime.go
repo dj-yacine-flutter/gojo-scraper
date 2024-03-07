@@ -69,13 +69,17 @@ func (s *Scraper) JKAnime(title string, isMovie bool, year, ep int) ([]models.If
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("resp.StatusCode != 200")
+		return nil, ErrNotOK
 	}
 
 	var search jkAnimeSearch
 	err = json.NewDecoder(resp.Body).Decode(&search)
 	if err != nil {
 		return nil, errors.New("failed to parse search results")
+	}
+
+	if len(search.Animes) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var pages []struct {
@@ -103,6 +107,10 @@ func (s *Scraper) JKAnime(title string, isMovie bool, year, ep int) ([]models.If
 				id:   v.ID,
 			})
 		}
+	}
+
+	if len(pages) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var links []string
@@ -213,7 +221,7 @@ func (s *Scraper) JKAnime(title string, isMovie bool, year, ep int) ([]models.If
 	}
 
 	if len(links) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	var ids []string
@@ -248,8 +256,11 @@ func (s *Scraper) JKAnime(title string, isMovie bool, year, ep int) ([]models.If
 		}
 	}
 
-	var iframes []models.Iframe
+	if len(ids) == 0 {
+		return nil, ErrNoDataFound
+	}
 
+	var iframes []models.Iframe
 	for _, v := range ids {
 		req, err := http.NewRequest(http.MethodGet, strings.TrimSpace(fmt.Sprintf("https://c4.jkdesu.com/servers/%s.js", v)), nil)
 		if err != nil {
@@ -288,6 +299,10 @@ func (s *Scraper) JKAnime(title string, isMovie bool, year, ep int) ([]models.If
 				Language: "es",
 			})
 		}
+	}
+
+	if len(iframes) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil

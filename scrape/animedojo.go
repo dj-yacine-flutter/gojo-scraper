@@ -22,7 +22,7 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("status code not 200")
+		return nil, ErrNotOK
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
@@ -60,6 +60,10 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 			}
 		}
 	})
+
+	if len(pages) == 0 {
+		return nil, ErrNoDataFound
+	}
 
 	links := make(map[string]string, len(pages))
 	for _, page := range pages {
@@ -120,6 +124,10 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 			q := stats.Find(".tac.tick-item.tick-dub")
 			links[strings.TrimSpace(root+href)] = strings.TrimSpace(q.Text())
 		}
+	}
+
+	if len(links) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var iframes []models.Iframe
@@ -224,7 +232,7 @@ func (s *Scraper) AnimeDojo(title string, isMovie bool, year, ep int) ([]models.
 	}
 
 	if len(iframes) == 0 {
-		return nil, errors.New("no iframe found")
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil

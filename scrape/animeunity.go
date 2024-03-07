@@ -45,7 +45,7 @@ func (s *Scraper) AnimeUnity(name string, isMovie bool, malID, year, ep int) ([]
 	defer re.Body.Close()
 
 	if re.StatusCode != 200 {
-		return nil, errors.New("StatusCode != 200")
+		return nil, ErrNotOK
 	}
 
 	var (
@@ -130,7 +130,7 @@ func (s *Scraper) AnimeUnity(name string, isMovie bool, malID, year, ep int) ([]
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("StatusCode != 200")
+		return nil, ErrNotOK
 	}
 
 	var result animeUnityItem
@@ -138,6 +138,10 @@ func (s *Scraper) AnimeUnity(name string, isMovie bool, malID, year, ep int) ([]
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		return nil, errors.New("failed to parse search data")
+	}
+
+	if len(result.Records) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var data []string
@@ -163,6 +167,10 @@ func (s *Scraper) AnimeUnity(name string, isMovie bool, malID, year, ep int) ([]
 		}
 
 		data = append(data, fmt.Sprintf("https://www.animeunity.to/anime/%d-%s", v.ID, v.Slug))
+	}
+
+	if len(data) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var codes []struct {
@@ -252,6 +260,10 @@ func (s *Scraper) AnimeUnity(name string, isMovie bool, malID, year, ep int) ([]
 		}
 	}
 
+	if len(codes) == 0 {
+		return nil, ErrNoDataFound
+	}
+
 	var iframes []models.Iframe
 	for _, v := range codes {
 		req3, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://www.animeunity.to/embed-url/%d", v.frame.ID), nil)
@@ -299,6 +311,10 @@ func (s *Scraper) AnimeUnity(name string, isMovie bool, malID, year, ep int) ([]
 				Language: "it",
 			})
 		}
+	}
+
+	if len(iframes) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil

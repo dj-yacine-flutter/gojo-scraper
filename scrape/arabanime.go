@@ -48,7 +48,7 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("status code not 200")
+		return nil, ErrNotOK
 	}
 
 	var search arabAnimeSearch
@@ -56,6 +56,10 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 	err = json.NewDecoder(resp.Body).Decode(&search)
 	if err != nil {
 		return nil, errors.New("cannot parse search results")
+	}
+
+	if len(search.SearchResaults) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var results []string
@@ -87,6 +91,10 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 				results = append(results, item.InfoURL)
 			}
 		}
+	}
+
+	if len(results) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var links []string
@@ -143,7 +151,7 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 	}
 
 	if len(links) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	var embeds []string
@@ -196,7 +204,7 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 	}
 
 	if len(embeds) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	var iframes []models.Iframe
@@ -241,7 +249,7 @@ func (s *Scraper) ArabAnime(title string, isMovie bool, year, ep int) ([]models.
 	}
 
 	if len(iframes) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil

@@ -3,7 +3,6 @@ package scrape
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -87,7 +86,7 @@ func (s *Scraper) SAnime(title string, isMovie bool, year, ep int) ([]models.Ifr
 	}
 
 	if len(ids) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	var (
@@ -156,7 +155,7 @@ func (s *Scraper) SAnime(title string, isMovie bool, year, ep int) ([]models.Ifr
 	}
 
 	if len(eps) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	var (
@@ -225,7 +224,7 @@ func (s *Scraper) SAnime(title string, isMovie bool, year, ep int) ([]models.Ifr
 	}
 
 	if len(iframes) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil

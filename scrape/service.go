@@ -1,7 +1,12 @@
 package scrape
 
-import "net/http"
+import (
+	"errors"
+)
 
-type Scraper struct {
-	HTTP *http.Client
-}
+var (
+	ErrNoDataFound = errors.New("no data found")
+	ErrNotOK       = errors.New("status code not 200")
+)
+
+type Scraper struct{}

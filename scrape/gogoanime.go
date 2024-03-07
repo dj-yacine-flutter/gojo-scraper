@@ -1,7 +1,6 @@
 package scrape
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -25,7 +24,7 @@ func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]mo
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("status code not 200")
+		return nil, ErrNotOK
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
@@ -43,6 +42,10 @@ func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]mo
 			}
 		}
 	})
+
+	if len(queries) == 0 {
+		return nil, ErrNoDataFound
+	}
 
 	var links []struct {
 		path string
@@ -156,7 +159,7 @@ func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]mo
 	}
 
 	if len(links) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	var pages []struct {
@@ -236,7 +239,7 @@ func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]mo
 	}
 
 	if len(pages) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	var iframes []models.Iframe
@@ -289,7 +292,7 @@ func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]mo
 	}
 
 	if len(iframes) == 0 {
-		return nil, errors.New("no data found")
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil

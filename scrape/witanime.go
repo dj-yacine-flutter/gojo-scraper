@@ -27,7 +27,7 @@ func (s *Scraper) WitAnime(title string, isMovie bool, malID, year, ep int) ([]m
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("status code not 200")
+		return nil, ErrNotOK
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
@@ -71,6 +71,10 @@ func (s *Scraper) WitAnime(title string, isMovie bool, malID, year, ep int) ([]m
 			}
 		}
 	})
+
+	if len(links) == 0 {
+		return nil, ErrNoDataFound
+	}
 
 	var pages []string
 	for _, v := range links {
@@ -157,6 +161,10 @@ func (s *Scraper) WitAnime(title string, isMovie bool, malID, year, ep int) ([]m
 		}
 	}
 
+	if len(pages) == 0 {
+		return nil, ErrNoDataFound
+	}
+
 	var iframes []models.Iframe
 	for _, v := range pages {
 		resp3, err := http.Get(v)
@@ -229,8 +237,8 @@ func (s *Scraper) WitAnime(title string, isMovie bool, malID, year, ep int) ([]m
 
 								if frame != "" {
 									m := models.Iframe{
-										Link: frame,
-										Type: "sub",
+										Link:     frame,
+										Type:     "sub",
 										Language: "ara",
 									}
 
@@ -247,15 +255,19 @@ func (s *Scraper) WitAnime(title string, isMovie bool, malID, year, ep int) ([]m
 						})
 					} else {
 						iframes = append(iframes, models.Iframe{
-							Link:    url,
-							Type:    "sub",
-							Quality: "hd",
+							Link:     url,
+							Type:     "sub",
+							Quality:  "hd",
 							Language: "ara",
 						})
 					}
 				}
 			}
 		})
+	}
+
+	if len(iframes) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil

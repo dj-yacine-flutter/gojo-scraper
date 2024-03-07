@@ -38,7 +38,7 @@ func (s *Scraper) AnimeRco(title string, isMovie bool, malID, year, ep int) ([]m
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("status code not 200")
+		return nil, ErrNotOK
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
@@ -63,6 +63,10 @@ func (s *Scraper) AnimeRco(title string, isMovie bool, malID, year, ep int) ([]m
 		row.Find(".media-block.seasons").Each(func(i int, s *goquery.Selection) {
 			data = append(data, s)
 		})
+	}
+
+	if len(data) == 0 {
+		return nil, ErrNoDataFound
 	}
 
 	var links []string
@@ -148,7 +152,7 @@ func (s *Scraper) AnimeRco(title string, isMovie bool, malID, year, ep int) ([]m
 	}
 
 	if len(links) == 0 {
-		return nil, errors.New("no links found")
+		return nil, ErrNoDataFound
 	}
 
 	var iframes []models.Iframe
@@ -235,9 +239,9 @@ func (s *Scraper) AnimeRco(title string, isMovie bool, malID, year, ep int) ([]m
 
 				if embed != "" {
 					iframes = append(iframes, models.Iframe{
-						Link:    strings.ReplaceAll(embed, "/\\", "/"),
-						Type:    "sub",
-						Quality: "hd",
+						Link:     strings.ReplaceAll(embed, "/\\", "/"),
+						Type:     "sub",
+						Quality:  "hd",
 						Language: "ara",
 					})
 				}
@@ -247,7 +251,7 @@ func (s *Scraper) AnimeRco(title string, isMovie bool, malID, year, ep int) ([]m
 	}
 
 	if len(iframes) == 0 {
-		return nil, errors.New("no iframes found")
+		return nil, ErrNoDataFound
 	}
 
 	return iframes, nil
