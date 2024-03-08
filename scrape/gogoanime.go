@@ -12,7 +12,7 @@ import (
 
 func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]models.Iframe, error) {
 	var err error
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://ajax.gogo-load.com/site/loadAjaxSearch?keyword=%s&id=-1&link_web=https://gogoanime3.co/", utils.CleanQuery(title)), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://ajax.gogocdn.net/site/loadAjaxSearch?keyword=%s&id=-1&link_web=https://gogoanime3.co/", utils.CleanQuery(title)), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (s *Scraper) GogoAnime(title string, isMovie bool, year, episode int) ([]mo
 		dub  bool
 	}
 	for _, v := range links {
-		req3, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://ajax.gogo-load.com/ajax/load-list-episode?ep_start=0&ep_end=9999&id=%s&default_ep=0&alias=%s", v.id, v.path), nil)
+		req3, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://ajax.gogocdn.net/ajax/load-list-episode?ep_start=0&ep_end=9999&id=%s&default_ep=0&alias=%s", v.id, v.path), nil)
 		if err != nil {
 			continue
 		}
