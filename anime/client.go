@@ -20,19 +20,13 @@ type AnimeScraper struct {
 }
 
 func NewAnimeScraper(tmdb *tmdb.Client, http *http.Client, tvdb *tvdb.Client, logger *zerolog.Logger, Oimg, Dimg string) *AnimeScraper {
-	scraper := &scrape.Scraper{
-		HTTP: http,
-	}
-
-	client := &AnimeScraper{
+	return &AnimeScraper{
 		TMDB:        tmdb,
 		HTTP:        http,
 		TVDB:        tvdb,
 		LOG:         logger,
-		SCRP:        scraper,
+		SCRP:        &scrape.Scraper{},
 		OriginalIMG: Oimg,
 		DecodeIMG:   Dimg,
 	}
-
-	return client
 }

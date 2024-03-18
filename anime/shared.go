@@ -9,66 +9,60 @@ import (
 	"github.com/dj-yacine-flutter/gojo-scraper/utils"
 )
 
-func (server *AnimeScraper) getTMDBRating(TMDbID int, AgeRating *string) {
+func (server *AnimeScraper) getTMDBRating(TMDbID int) string {
 	results, err := server.TMDB.GetMovieReleaseDates(TMDbID)
 	if err != nil {
-		return
+		return ""
 	}
+
+	var age string
 	if results != nil {
 		for _, r := range results.Results {
 			if strings.Contains(strings.ToLower(r.Iso3166_1), "us") {
 				for _, t := range r.ReleaseDates {
 					if t.Certification != "" {
-						*AgeRating, err = utils.CleanRating(t.Certification)
+						age, err = utils.CleanRating(t.Certification)
 						if err != nil {
-							*AgeRating = ""
 							continue
 						}
-						break
+						return age
 					}
 				}
 			}
 		}
 	}
+
+	return age
 }
 
-func (server *AnimeScraper) getTMDBPic(posterPath, backdropPath string, PortriatBlurHash, PortriatPoster, LandscapeBlurHash, LandscapePoster *string) {
-	var err error
-	if posterPath != "" {
-		*PortriatBlurHash, err = utils.GetBlurHash(server.DecodeIMG, posterPath)
-		if err != nil {
-			*PortriatBlurHash = ""
-			*PortriatPoster = ""
-		}
-		*PortriatPoster = server.OriginalIMG + posterPath
+func (server *AnimeScraper) getTMDBPic(imgPath string) (string, string) {
+	var (
+		img  string
+		hash string
+	)
+	if imgPath != "" {
+		img = server.DecodeIMG + imgPath
+		hash, _ = utils.GetBlurHash(server.DecodeIMG, imgPath)
 	}
 
-	if backdropPath != "" {
-		*LandscapeBlurHash, err = utils.GetBlurHash(server.DecodeIMG, backdropPath)
-		if err != nil {
-			*LandscapeBlurHash = ""
-			*LandscapePoster = ""
-		}
-		*LandscapePoster = server.OriginalIMG + backdropPath
-	}
+	return img, hash
 }
 
-func (server *AnimeScraper) getMalPic(Pic, JPG, WEBP string, PortriatBlurHash, PortriatPoster *string) {
-	var err error
-	img := ""
-	if JPG != "" {
-		img = JPG
-	} else if WEBP != "" {
-		img = WEBP
+func (server *AnimeScraper) getMainPic(Pic string, imgs jikan.Images3) (PortriatPoster string, PortriatBlurHash string) {
+	var img string
+	if imgs.Jpg.LargeImageUrl != "" {
+		img = imgs.Jpg.LargeImageUrl
+	} else if imgs.Webp.LargeImageUrl != "" {
+		img = imgs.Webp.LargeImageUrl
 	} else {
 		img = fmt.Sprint("https://cdn-eu.anidb.net/images/main/" + Pic)
 	}
-	*PortriatBlurHash, err = utils.GetBlurHash(img, "")
-	if err != nil {
-		*PortriatBlurHash = ""
-	}
 
-	*PortriatPoster = img
+	hash, err := utils.GetBlurHash(img, "")
+	if err != nil {
+		return img, ""
+	}
+	return img, hash
 }
 
 func (server *AnimeScraper) getAniDBIDFromTitles(malData *jikan.AnimeById) (int, error) {
